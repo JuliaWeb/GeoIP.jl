@@ -1,26 +1,45 @@
-using GeoIP
+module TestGeoIP
+    using Base.Test
+    using GeoIP
 
-let
-	# Numeric coding
-	ip = GeoIP.numericize("18.0.0.0")
-	@assert ip == 18 * 256^3
+	ip1i = GeoIP.numericize("18.0.0.0")
+	ip2i = GeoIP.numericize("25.0.0.0")
+	ip1s = "18.0.0.0"
+	ip2s = "25.0.0.0"
 
-	@assert getcountrycode(ip) == "US"
-	@assert getcountryname(ip) == "United States"
+	@test ip1i == 18 * 256^3
+	@test ip2i == 25 * 256^3
 
-	@assert getcountrycode([ip, ip]) == ["US", "US"]
-	@assert getcountryname([ip, ip]) == ["United States", "United States"]
+	@test getcountrycode(ip1i) == "US"
+	@test getcountryname(ip1i) == "United States"
+	@test getcountrycode(ip1s) == "US"
+	@test getcountryname(ip1s) == "United States"
 
-	# String coding
-	@assert getcountrycode("18.0.0.0") == "US"
-	@assert getcountryname("18.0.0.0") == "United States"
+	@test getcountrycode([ip1i, ip1i]) == ["US", "US"]
+	@test getcountryname([ip1i, ip1i]) == ["United States", "United States"]
+	@test getcountrycode([ip1s, ip2s]) == ["US", "GB"]
+	@test getcountryname([ip1s, ip2s]) == ["United States", "United Kingdom"]
 
-	@assert getcountrycode("18.0.0.0") == "US"
-	@assert getcountryname("18.0.0.0") == "United States"
+    @test getregionname(1135531255) == "KS"
+    @test getregionname([1135531255,1135531255]) == ["KS", "KS"]
 
-	@assert getcountrycode(["18.0.0.0"]) == ["US"]
-	@assert getcountryname(["18.0.0.0"]) == ["United States"]
+    @test getcityname(1135531255) == "Overland Park"
+    @test getcityname([1135531255, 1135531255]) == [
+        "Overland Park", "Overland Park"
+    ]
 
-	@assert getcountrycode(["18.0.0.0", "25.0.0.0"]) == ["US", "GB"]
-	@assert getcountryname(["18.0.0.0", "25.0.0.0"]) == ["United States", "United Kingdom"]
+    @test getpostalcode(1135531255) == "66212"
+    @test getpostalcode([1135531255, 1135531255]) == ["66212", "66212"]
+
+    @test getlongitude(1135531255) == -94.6811
+    @test getlongitude([1135531255, 1135531255]) == [-94.6811, -94.6811]
+
+    @test getlatitude(1135531255) == 38.9593
+    @test getlatitude([1135531255, 1135531255]) == [38.9593, 38.9593]
+
+    @test getmetrocode(1135531255) == 616
+    @test getmetrocode([1135531255,1135531255]) == [616, 616]
+
+    @test getareacode(1135531255) == 913
+    @test getareacode([1135531255,1135531255]) == [913, 913]
 end
