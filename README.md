@@ -1,6 +1,10 @@
 GeoIP.jl
 ========
 
+[![Build Status](https://travis-ci.org/JuliaWeb/GeoIP.jl.svg)](https://travis-ci.org/JuliaWeb/GeoIP.jl)
+[![Coverage Status](https://img.shields.io/coveralls/JuliaWeb/GeoIP.jl.svg)](https://coveralls.io/r/JuliaWeb/GeoIP.jl)
+[![GeoIP](http://pkg.julialang.org/badges/GeoIP_release.svg)](http://pkg.julialang.org/?pkg=GeoIP&ver=release)
+
 # Introduction
 
 This is a Julia package for determining the approximate location of Internet
