@@ -1,28 +1,43 @@
-fatalerrors = length(ARGS) > 0 && ARGS[1] == "-f"
-anyerrors = false
-
 using Base.Test
 using GeoIP
 
-my_tests = [
-    "GeoIP.jl",
+ip1i = GeoIP.numericize("18.0.0.0")
+ip2i = GeoIP.numericize("25.0.0.0")
+ip1s = "18.0.0.0"
+ip2s = "25.0.0.0"
+
+@test ip1i == 18 * 256^3
+@test ip2i == 25 * 256^3
+
+@test getcountrycode(ip1i) == "US"
+@test getcountryname(ip1i) == "United States"
+@test getcountrycode(ip1s) == "US"
+@test getcountryname(ip1s) == "United States"
+
+@test getcountrycode([ip1i, ip1i]) == ["US", "US"]
+@test getcountryname([ip1i, ip1i]) == ["United States", "United States"]
+@test getcountrycode([ip1s, ip2s]) == ["US", "GB"]
+@test getcountryname([ip1s, ip2s]) == ["United States", "United Kingdom"]
+
+@test getregionname(1135531255) == "KS"
+@test getregionname([1135531255,1135531255]) == ["KS", "KS"]
+
+@test getcityname(1135531255) == "Overland Park"
+@test getcityname([1135531255, 1135531255]) == [
+    "Overland Park", "Overland Park"
 ]
 
-println("Running tests:")
+@test getpostalcode(1135531255) == "66212"
+@test getpostalcode([1135531255, 1135531255]) == ["66212", "66212"]
 
-for my_test in my_tests
-    try
-        include(my_test)
-        println("\t\033[1m\033[32mPASSED\033[0m: $(my_test)")
-    catch
-        anyerrors = true
-        println("\t\033[1m\033[31mFAILED\033[0m: $(my_test)")
-        if fatalerrors
-            rethrow()
-        end
-    end
-end
+@test getlongitude(1135531255) == -94.6811
+@test getlongitude([1135531255, 1135531255]) == [-94.6811, -94.6811]
 
-if anyerrors
-    throw("Tests failed")
-end
+@test getlatitude(1135531255) == 38.9593
+@test getlatitude([1135531255, 1135531255]) == [38.9593, 38.9593]
+
+@test getmetrocode(1135531255) == 616
+@test getmetrocode([1135531255,1135531255]) == [616, 616]
+
+@test getareacode(1135531255) == 913
+@test getareacode([1135531255,1135531255]) == [913, 913]
