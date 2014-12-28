@@ -84,9 +84,9 @@ function update()
     newmd5 = getmd5()
     updaterequired = (currmd5 != newmd5)
     if !(updaterequired)
-        info("GeoIP data is current.")
+        info("Geolocation data is current.")
     else
-        info("Geodata out of date. Updating...")
+        info("Geolocation data is out of date. Updating...")
         dldata(newmd5)
         global dataloaded = false
     end
@@ -98,8 +98,14 @@ lookupgeoname(locs,id::Integer) = locs[findfirst(locs[:geoname_id],id),:]
 function load()
     blockfile = Pkg.dir("GeoIP","data", BLOCKCSVGZ)
     locfile = Pkg.dir("GeoIP", "data", CITYCSVGZ)
-    blocks = readtable(blockfile)
-    locs = readtable(locfile)
+    blocks = DataFrame()
+    locs = DataFrame()
+    try
+        blocks = readtable(blockfile)
+        locs = readtable(locfile)
+    catch
+        error("Geolocation data cannot be read. Consider updating.")
+    end
     deletecols = [:represented_country_geoname_id, :is_anonymous_proxy, :is_satellite_provider]
     delete!(blocks,deletecols)
     blocks[:v4net] = map(x->IPNets.IPv4Net(x), blocks[:network])
@@ -116,9 +122,13 @@ function mapcontains(nets::AbstractArray, addr::IPv4)
     return map(x->contains(x,addr), nets)
 end
 
-function geolocate(ip::IPv4; noupdate=false)
-    if updaterequired() && !(noupdate)
-        update()
+function geolocate(ip::IPv4; noupdate=true)
+    if updaterequired()
+        if  !(noupdate)
+            update()
+        else
+            warn("Geolocation data is out of date. Consider updating.")
+        end
     end
 
     if !(dataloaded)
@@ -144,6 +154,13 @@ function geolocate(ip::IPv4; noupdate=false)
     return retdict
 end
 
+function geolocate(iparr::AbstractArray; noupdate=true)
+    masterdict = Dict{Symbol, Union(Integer, Location, DataArrays.NAtype, IPv4Net, AbstractString)}[]
+    for el in iparr
+        push!(masterdict, geolocate(el; noupdate=noupdate))
+    end
+    return masterdict
+end
 
 ######################################
 # deprecations / convenience functions
@@ -157,3 +174,5 @@ end
 @deprecate getlatitude(ip)      geolocate(IPv4(ip))[:location].y
 @deprecate getmetrocode(ip)     geolocate(IPv4(ip))[:metro_code]
 @deprecate getareacode(ip)      geolocate(IPv4(ip))[:metro_code]
+@deprecate geolocate(ipstr::AbstractString) geolocate(IPv4(ipstr))
+@deprecate geolocate(ipint::Integer) geolocate(IPv4(ipint))
