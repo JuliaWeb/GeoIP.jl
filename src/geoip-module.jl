@@ -41,14 +41,18 @@ end
 
 function getmd5()
     r = get(CITYMD5URL)
-    newmd5 = r.data
+    newmd5 = isdefined(r,:data)? r.data : takebuf_string(r.body)
     return newmd5
 end
 
 updaterequired() = (readmd5() != getmd5())
 function dldata(md5::AbstractString)
     r = get(CITYDLURL)
-    newzip = ZipFile.Reader(IOBuffer(r.data))
+    if isdefined(r,:data)
+        newzip = ZipFile.Reader(r.data)
+    else
+        newzip = ZipFile.Reader(r.body)
+    end
     dlcount = 0
     for fn in newzip.files
         if contains(string(fn),BLOCKCSV)

@@ -4,7 +4,7 @@ module GeoIP
     using DataFrames
     using ZipFile
     using GZip
-    using Requests
+    using HTTPClient
     using Compat
     import Base: Zip2
     export
