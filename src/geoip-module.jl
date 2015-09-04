@@ -22,10 +22,11 @@ immutable Location <: Point3D
     datum::String
 
     function Location(x,y,z=0, datum="WGS84")
-        if is(x,NA) || is (y,NA)
+        if is(x,NA) || is(y,NA)
             return NA
+        else
+            return new(x,y,z,datum)
         end
-        return new(x,y,z,datum)
     end
 end
 
@@ -41,7 +42,7 @@ end
 
 function getmd5()
     r = get(CITYMD5URL)
-    newmd5 = r.data
+    newmd5 = string(r.data)
     return newmd5
 end
 
