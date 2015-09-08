@@ -18,4 +18,4 @@ script:
     - julia -e 'Pkg.init(); Pkg.clone(pwd())'
     - julia -e 'Pkg.test("GeoIP", coverage=true)'
 after_success:
-    - julia -e 'cd(Pkg.dir("GeoIP")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+    - julia -e 'cd(Pkg.dir("GeoIP")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder()); ; Codecov.submit(process_folder())'
