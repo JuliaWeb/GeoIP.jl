@@ -47,13 +47,9 @@ function disable_testing()
 end
 
 function readmd5()
-    md5=""
-    try
-        f = open(GEOLITEMD5)
-        md5 = strip(readline(f))
-        close(f)
+    open(GEOLITEMD5) do f
+        return strip(readline(f))
     end
-    return md5
 end
 
 function getmd5()
@@ -70,24 +66,19 @@ function dldata(md5::AbstractString)
     dlcount = 0
     for fn in newzip.files
         if contains(string(fn),BLOCKCSV)
-            # try
-                f = gzopen(Pkg.dir("GeoIP","data",BLOCKCSVGZ),"w")
+            gzopen(Pkg.dir("GeoIP","data",BLOCKCSVGZ),"w") do f
                 write(f,readall(fn))
-                close(f)
                 dlcount += 1
-            # end
+            end
         elseif contains(string(fn),CITYCSV)
-            # try
-                f = gzopen(Pkg.dir("GeoIP","data",CITYCSVGZ),"w")
+            gzopen(Pkg.dir("GeoIP","data",CITYCSVGZ),"w") do f
                 write(f,readall(fn))
-                close(f)
                 dlcount += 1
-            # end
+            end
         end
     end
     if dlcount == 2
-        try
-            f = open(GEOLITEMD5,"w")
+        open(GEOLITEMD5,"w") do f
             write(f, md5)
             close(f)
         end
@@ -102,6 +93,7 @@ function update()
     info("Geolocation data is out of date. Updating...")
     dldata(newmd5)
     global dataloaded = false
+    return nothing
 end
 
 
@@ -162,7 +154,7 @@ function geolocate(ip::IPv4; noupdate=true)
             break
         end
     end
-    retdict = Dict{Symbol, Union(Integer, Location, DataArrays.NAtype, IPv4Net, AbstractString)}()
+    retdict = Dict{Symbol, @compat Union{Integer, Location, DataArrays.NAtype, IPv4Net, AbstractString}}()
     if (found > 0) && in(ip,geodata[found,:v4net])
         for (k,v) in eachcol(geodata[found,:])
             retdict[k] = v[1]
@@ -172,7 +164,7 @@ function geolocate(ip::IPv4; noupdate=true)
 end
 
 function geolocate(iparr::AbstractArray; noupdate=true)
-    masterdict = Dict{Symbol, Union(Integer, Location, DataArrays.NAtype, IPv4Net, AbstractString)}[]
+    masterdict = Dict{Symbol, @compat Union{Integer, Location, DataArrays.NAtype, IPv4Net, AbstractString}}[]
     for el in iparr
         push!(masterdict, geolocate(el; noupdate=noupdate))
     end
