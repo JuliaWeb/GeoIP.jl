@@ -1,7 +1,11 @@
+GEOIP_TESTING = false       # set to true for testing.
+
 CITYMD5URL = "http://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip.md5"
 CITYDLURL = "http://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip"
 GEOLITEDATA = Pkg.dir("GeoIP","data")
+
 GEOLITEMD5 = Pkg.dir("GeoIP","data",".md5")
+
 BLOCKCSV = "GeoLite2-City-Blocks-IPv4.csv"
 CITYCSV = "GeoLite2-City-Locations-en.csv"
 BLOCKCSVGZ = string(BLOCKCSV,".gz")
@@ -19,7 +23,7 @@ immutable Location <: Point3D
     x::Float64
     y::Float64
     z::Float64
-    datum::String
+    datum::ASCIIString
 
     function Location(x,y,z=0, datum="WGS84")
         if is(x,NA) || is(y,NA)
@@ -28,6 +32,18 @@ immutable Location <: Point3D
             return new(x,y,z,datum)
         end
     end
+end
+
+function enable_testing()
+    global GEOIP_TESTING = true
+    global GEOLITEDATA = Pkg.dir("GeoIP","data","testdata")
+    info("testing enabled")
+end
+
+function disable_testing()
+    global GEOIP_TESTING = false
+    global GEOLITEDATA = Pkg.dir("GeoIP","data")
+    info("testing disabled")
 end
 
 function readmd5()
@@ -46,7 +62,8 @@ function getmd5()
     return newmd5
 end
 
-updaterequired() = (readmd5() != getmd5())
+updaterequired() = !GEOIP_TESTING && (readmd5() != getmd5())
+
 function dldata(md5::AbstractString)
     r = get(CITYDLURL)
     newzip = ZipFile.Reader(IOBuffer(r.data))
@@ -81,24 +98,18 @@ function dldata(md5::AbstractString)
 end
 
 function update()
-    currmd5 = readmd5()
     newmd5 = getmd5()
-    updaterequired = (currmd5 != newmd5)
-    if !(updaterequired)
-        info("Geolocation data is current.")
-    else
-        info("Geolocation data is out of date. Updating...")
-        dldata(newmd5)
-        global dataloaded = false
-    end
+    info("Geolocation data is out of date. Updating...")
+    dldata(newmd5)
+    global dataloaded = false
 end
 
 
 lookupgeoname(locs,id::Integer) = locs[findfirst(locs[:geoname_id],id),:]
 
 function load()
-    blockfile = Pkg.dir("GeoIP","data", BLOCKCSVGZ)
-    locfile = Pkg.dir("GeoIP", "data", CITYCSVGZ)
+    blockfile = joinpath(GEOLITEDATA, BLOCKCSVGZ)
+    locfile = joinpath(GEOLITEDATA, CITYCSVGZ)
     blocks = DataFrame()
     locs = DataFrame()
     try
@@ -134,6 +145,11 @@ function geolocate(ip::IPv4; noupdate=true)
 
     if !(dataloaded)
         info("Geolocation data not in memory. Loading...")
+        if GEOIP_TESTING
+            info("in testing")
+        else
+            info("not in testing")
+        end
         load()
     end
     ipnet = IPv4Net(ip,32)
