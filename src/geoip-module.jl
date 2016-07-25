@@ -1,7 +1,7 @@
 CITYMD5URL = "http://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip.md5"
 CITYDLURL = "http://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip"
-GEOLITEDATA = Pkg.dir("GeoIP","data")
-GEOLITEMD5 = Pkg.dir("GeoIP","data",".md5")
+GEOLITEDATA = joinpath(dirname(@__FILE__),"..","data")
+GEOLITEMD5 = joinpath(dirname(@__FILE__),"..","data",".md5")
 BLOCKCSV = "GeoLite2-City-Blocks-IPv4.csv"
 CITYCSV = "GeoLite2-City-Locations-en.csv"
 BLOCKCSVGZ = string(BLOCKCSV,".gz")
@@ -9,8 +9,8 @@ CITYCSVGZ = string(CITYCSV,".gz")
 dataloaded = false
 geodata = DataFrame()
 
-pkgdir = Pkg.dir("GeoIP", "data")
-# file access = Pkg.dir("GeoIP", "data", "GeoLiteCity-Blocks.csv.gz"),
+pkgdir = joinpath(dirname(@__FILE__),"..", "data")
+# file access = joinpath(dirname(@__FILE__),"..", "data", "GeoLiteCity-Blocks.csv.gz"),
 # It would be great to replace this with a real GIS package.
 abstract Point
 abstract Point3D <: Point
@@ -54,14 +54,14 @@ function dldata(md5::AbstractString)
     for fn in newzip.files
         if contains(string(fn),BLOCKCSV)
             # try
-                f = gzopen(Pkg.dir("GeoIP","data",BLOCKCSVGZ),"w")
+                f = gzopen(joinpath(dirname(@__FILE__),"..","data",BLOCKCSVGZ),"w")
                 write(f,readall(fn))
                 close(f)
                 dlcount += 1
             # end
         elseif contains(string(fn),CITYCSV)
             # try
-                f = gzopen(Pkg.dir("GeoIP","data",CITYCSVGZ),"w")
+                f = gzopen(joinpath(dirname(@__FILE__),"..","data",CITYCSVGZ),"w")
                 write(f,readall(fn))
                 close(f)
                 dlcount += 1
@@ -97,8 +97,8 @@ end
 lookupgeoname(locs,id::Integer) = locs[findfirst(locs[:geoname_id],id),:]
 
 function load()
-    blockfile = Pkg.dir("GeoIP","data", BLOCKCSVGZ)
-    locfile = Pkg.dir("GeoIP", "data", CITYCSVGZ)
+    blockfile = joinpath(dirname(@__FILE__),"..","data", BLOCKCSVGZ)
+    locfile = joinpath(dirname(@__FILE__),"..", "data", CITYCSVGZ)
     blocks = DataFrame()
     locs = DataFrame()
     try
