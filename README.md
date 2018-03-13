@@ -1,7 +1,7 @@
 # GeoIP
 
-[![GeoIP](http://pkg.julialang.org/badges/GeoIP_0.3.svg)](http://pkg.julialang.org/?pkg=GeoIP&ver=0.3)
-[![GeoIP](http://pkg.julialang.org/badges/GeoIP_0.4.svg)](http://pkg.julialang.org/?pkg=GeoIP&ver=0.4)
+[//]: [![GeoIP](http://pkg.julialang.org/badges/GeoIP_0.3.svg)](http://pkg.julialang.org/?pkg=GeoIP&ver=0.3)
+[//]: [![GeoIP](http://pkg.julialang.org/badges/GeoIP_0.4.svg)](http://pkg.julialang.org/?pkg=GeoIP&ver=0.4)
 
 Support for Maxmind's IP Geolocation (v2) CSVs.
 
