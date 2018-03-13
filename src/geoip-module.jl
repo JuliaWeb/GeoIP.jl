@@ -10,10 +10,11 @@ dataloaded = false
 geodata = DataFrame()
 
 pkgdir = Pkg.dir("GeoIP", "data")
+
 # file access = Pkg.dir("GeoIP", "data", "GeoLiteCity-Blocks.csv.gz"),
 # It would be great to replace this with a real GIS package.
-abstract Point
-abstract Point3D <: Point
+abstract type Point end
+abstract type Point3D <: Point end
 
 immutable Location <: Point3D
     x::Float64
