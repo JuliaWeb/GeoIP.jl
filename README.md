@@ -11,6 +11,8 @@
 `GeoIP.geolocate(IPv4)` will load data from the CSV if it's
 not already loaded.
 
+### Example
+
 ```julia
 using GeoIP
 a = ip"1.2.3.4"
