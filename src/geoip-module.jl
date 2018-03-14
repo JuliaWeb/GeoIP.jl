@@ -1,11 +1,12 @@
-CITYMD5URL = "http://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip.md5"
-CITYDLURL = "http://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip"
-GEOLITEDATA = joinpath(dirname(@__FILE__),"..","data")
-GEOLITEMD5 = joinpath(dirname(@__FILE__),"..","data",".md5")
-BLOCKCSV = "GeoLite2-City-Blocks-IPv4.csv"
-CITYCSV = "GeoLite2-City-Locations-en.csv"
-BLOCKCSVGZ = string(BLOCKCSV,".gz")
-CITYCSVGZ = string(CITYCSV,".gz")
+const CITYMD5URL = "http://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip.md5"
+const CITYDLURL = "http://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip"
+const GEOLITEDATA = joinpath(dirname(@__FILE__),"..","data")
+const GEOLITEMD5 = joinpath(dirname(@__FILE__),"..","data",".md5")
+const BLOCKCSV = "GeoLite2-City-Blocks-IPv4.csv"
+const CITYCSV = "GeoLite2-City-Locations-en.csv"
+const BLOCKCSVGZ = string(BLOCKCSV,".gz")
+const CITYCSVGZ = string(CITYCSV,".gz")
+
 dataloaded = false
 geodata = DataFrame()
 
