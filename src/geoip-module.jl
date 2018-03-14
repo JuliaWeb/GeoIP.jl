@@ -1,19 +1,21 @@
-CITYMD5URL = "http://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip.md5"
-CITYDLURL = "http://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip"
-GEOLITEDATA = Pkg.dir("GeoIP","data")
-GEOLITEMD5 = Pkg.dir("GeoIP","data",".md5")
-BLOCKCSV = "GeoLite2-City-Blocks-IPv4.csv"
-CITYCSV = "GeoLite2-City-Locations-en.csv"
-BLOCKCSVGZ = string(BLOCKCSV,".gz")
-CITYCSVGZ = string(CITYCSV,".gz")
+const CITYMD5URL = "http://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip.md5"
+const CITYDLURL = "http://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip"
+const GEOLITEDATA = joinpath(dirname(@__FILE__),"..","data")
+const GEOLITEMD5 = joinpath(dirname(@__FILE__),"..","data",".md5")
+const BLOCKCSV = "GeoLite2-City-Blocks-IPv4.csv"
+const CITYCSV = "GeoLite2-City-Locations-en.csv"
+const BLOCKCSVGZ = string(BLOCKCSV,".gz")
+const CITYCSVGZ = string(CITYCSV,".gz")
+
 dataloaded = false
 geodata = DataFrame()
 
-pkgdir = Pkg.dir("GeoIP", "data")
-# file access = Pkg.dir("GeoIP", "data", "GeoLiteCity-Blocks.csv.gz"),
+pkgdir = joinpath(dirname(@__FILE__),"..", "data")
+# file access = joinpath(dirname(@__FILE__),"..", "data", "GeoLiteCity-Blocks.csv.gz"),
+
 # It would be great to replace this with a real GIS package.
-abstract Point
-abstract Point3D <: Point
+abstract type Point end
+abstract type Point3D <: Point end
 
 immutable Location <: Point3D
     x::Float64
@@ -22,7 +24,7 @@ immutable Location <: Point3D
     datum::String
 
     function Location(x,y,z=0, datum="WGS84")
-        if is(x,NA) || is(y,NA)
+        if x === NA || y === NA
             return NA
         else
             return new(x,y,z,datum)
@@ -54,15 +56,15 @@ function dldata(md5::AbstractString)
     for fn in newzip.files
         if contains(string(fn),BLOCKCSV)
             # try
-                f = gzopen(Pkg.dir("GeoIP","data",BLOCKCSVGZ),"w")
-                write(f,readall(fn))
+                f = gzopen(joinpath(dirname(@__FILE__),"..","data",BLOCKCSVGZ),"w")
+                write(f, read(fn))
                 close(f)
                 dlcount += 1
             # end
         elseif contains(string(fn),CITYCSV)
             # try
-                f = gzopen(Pkg.dir("GeoIP","data",CITYCSVGZ),"w")
-                write(f,readall(fn))
+                f = gzopen(joinpath(dirname(@__FILE__),"..","data",CITYCSVGZ),"w")
+                write(f, read(fn))
                 close(f)
                 dlcount += 1
             # end
@@ -97,16 +99,18 @@ end
 lookupgeoname(locs,id::Integer) = locs[findfirst(locs[:geoname_id],id),:]
 
 function load()
-    blockfile = Pkg.dir("GeoIP","data", BLOCKCSVGZ)
-    locfile = Pkg.dir("GeoIP", "data", CITYCSVGZ)
+    blockfile = joinpath(dirname(@__FILE__), "..", "data", BLOCKCSVGZ) 
+    locfile = joinpath(dirname(@__FILE__), "..", "data", CITYCSVGZ)
+
     blocks = DataFrame()
     locs = DataFrame()
     try
-        blocks = readtable(blockfile)
-        locs = readtable(locfile)
+         blocks = readtable(blockfile)
+         locs = readtable(locfile)
     catch
         error("Geolocation data cannot be read. Consider updating.")
     end
+    
     deletecols = [:represented_country_geoname_id, :is_anonymous_proxy, :is_satellite_provider]
     delete!(blocks,deletecols)
     blocks[:v4net] = map(x->IPNets.IPv4Net(x), blocks[:network])
@@ -146,7 +150,7 @@ function geolocate(ip::IPv4; noupdate=true)
             break
         end
     end
-    retdict = Dict{Symbol, Union(Integer, Location, DataArrays.NAtype, IPv4Net, AbstractString)}()
+    retdict = Dict{Symbol, Any}()
     if (found > 0) && in(ip,geodata[found,:v4net])
         for (k,v) in eachcol(geodata[found,:])
             retdict[k] = v[1]
@@ -156,7 +160,7 @@ function geolocate(ip::IPv4; noupdate=true)
 end
 
 function geolocate(iparr::AbstractArray; noupdate=true)
-    masterdict = Dict{Symbol, Union(Integer, Location, DataArrays.NAtype, IPv4Net, AbstractString)}[]
+    masterdict = Dict{Symbol, Any}[]
     for el in iparr
         push!(masterdict, geolocate(el; noupdate=noupdate))
     end
