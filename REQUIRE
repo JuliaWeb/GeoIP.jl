@@ -1,4 +1,4 @@
-julia 0.4
+julia 0.6
 IPNets
 DataFrames
 ZipFile 0.2.4

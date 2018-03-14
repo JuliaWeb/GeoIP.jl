@@ -23,7 +23,7 @@ immutable Location <: Point3D
     datum::String
 
     function Location(x,y,z=0, datum="WGS84")
-        if is(x,NA) || is(y,NA)
+        if x === NA || y === NA
             return NA
         else
             return new(x,y,z,datum)
@@ -56,14 +56,14 @@ function dldata(md5::AbstractString)
         if contains(string(fn),BLOCKCSV)
             # try
                 f = gzopen(joinpath(dirname(@__FILE__),"..","data",BLOCKCSVGZ),"w")
-                write(f,readall(fn))
+                write(f, read(fn))
                 close(f)
                 dlcount += 1
             # end
         elseif contains(string(fn),CITYCSV)
             # try
                 f = gzopen(joinpath(dirname(@__FILE__),"..","data",CITYCSVGZ),"w")
-                write(f,readall(fn))
+                write(f, read(fn))
                 close(f)
                 dlcount += 1
             # end
@@ -147,7 +147,7 @@ function geolocate(ip::IPv4; noupdate=true)
             break
         end
     end
-    retdict = Dict{Symbol, Union(Integer, Location, DataArrays.NAtype, IPv4Net, AbstractString)}()
+    retdict = Dict{Symbol, Union{Integer, Location, DataArrays.NAtype, IPv4Net, AbstractString}}()
     if (found > 0) && in(ip,geodata[found,:v4net])
         for (k,v) in eachcol(geodata[found,:])
             retdict[k] = v[1]
@@ -157,7 +157,7 @@ function geolocate(ip::IPv4; noupdate=true)
 end
 
 function geolocate(iparr::AbstractArray; noupdate=true)
-    masterdict = Dict{Symbol, Union(Integer, Location, DataArrays.NAtype, IPv4Net, AbstractString)}[]
+    masterdict = Dict{Symbol, Union{Integer, Location, DataArrays.NAtype, IPv4Net, AbstractString}}[]
     for el in iparr
         push!(masterdict, geolocate(el; noupdate=noupdate))
     end
