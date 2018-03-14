@@ -6,7 +6,7 @@ module GeoIP
     using GZip
     using Requests
     using Compat
-    import Base: Zip2
+
     export
         # types
         Location,
