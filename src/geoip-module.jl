@@ -99,16 +99,18 @@ end
 lookupgeoname(locs,id::Integer) = locs[findfirst(locs[:geoname_id],id),:]
 
 function load()
-    blockfile = joinpath(dirname(@__FILE__),"..","data", BLOCKCSVGZ)
-    locfile = joinpath(dirname(@__FILE__),"..", "data", CITYCSVGZ)
+    blockfile = joinpath(dirname(@__FILE__), "..", "data", BLOCKCSVGZ) 
+    locfile = joinpath(dirname(@__FILE__), "..", "data", CITYCSVGZ)
+
     blocks = DataFrame()
     locs = DataFrame()
     try
-        blocks = readtable(blockfile)
-        locs = readtable(locfile)
+         blocks = readtable(blockfile)
+         locs = readtable(locfile)
     catch
         error("Geolocation data cannot be read. Consider updating.")
     end
+    
     deletecols = [:represented_country_geoname_id, :is_anonymous_proxy, :is_satellite_provider]
     delete!(blocks,deletecols)
     blocks[:v4net] = map(x->IPNets.IPv4Net(x), blocks[:network])
@@ -148,7 +150,7 @@ function geolocate(ip::IPv4; noupdate=true)
             break
         end
     end
-    retdict = Dict{Symbol, Union{Integer, Location, DataArrays.NAtype, IPv4Net, AbstractString}}()
+    retdict = Dict{Symbol, Any}()
     if (found > 0) && in(ip,geodata[found,:v4net])
         for (k,v) in eachcol(geodata[found,:])
             retdict[k] = v[1]
@@ -158,7 +160,7 @@ function geolocate(ip::IPv4; noupdate=true)
 end
 
 function geolocate(iparr::AbstractArray; noupdate=true)
-    masterdict = Dict{Symbol, Union{Integer, Location, DataArrays.NAtype, IPv4Net, AbstractString}}[]
+    masterdict = Dict{Symbol, Any}[]
     for el in iparr
         push!(masterdict, geolocate(el; noupdate=noupdate))
     end

@@ -6,6 +6,7 @@ module GeoIP
     using GZip
     using Requests
     using Compat
+
     export
         # types
         Location,
