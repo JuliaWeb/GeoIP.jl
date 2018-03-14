@@ -1,5 +1,9 @@
 # GeoIP
 
+| *Package Evaluator* | *Build Status* | *Coverage* |
+|:-------------------:|:--------------:|:----------:|
+| [![GeoIP](http://pkg.julialang.org/badges/GeoIP_0.6.svg)](http://pkg.julialang.org/?pkg=GeoIP&ver=0.6)                    | [![Build Status](https://travis-ci.org/JuliaWeb/GeoIP.jl.svg?branch=master)](https://travis-ci.org/JuliaWeb/GeoIP.jl) | [![Coverage Status](https://coveralls.io/repos/github/JuliaWeb/GeoIP.jl/badge.svg)](https://coveralls.io/github/JuliaWeb/GeoIP.jl) |
+
 [//]: [![GeoIP](http://pkg.julialang.org/badges/GeoIP_0.3.svg)](http://pkg.julialang.org/?pkg=GeoIP&ver=0.3)
 [//]: [![GeoIP](http://pkg.julialang.org/badges/GeoIP_0.4.svg)](http://pkg.julialang.org/?pkg=GeoIP&ver=0.4)
 
