@@ -7,3 +7,6 @@ geoip1 = geolocate(ip1; noupdate=false)
 @test geoip1[:country_iso_code] == "US"
 @test geoip1[:metro_code] == 819
 @test @compat(ceil(Int, geoip1[:location].x)) == -122
+
+@test isempty(geolocate(ip"0.0.0.0"))
+@test isempty(geolocate(ip"127.0.0.1"))
