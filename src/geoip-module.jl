@@ -9,8 +9,8 @@ struct Location <: Point3D
     datum::String
 
     function Location(x,y,z=0, datum="WGS84")
-        if x === NA || y === NA
-            return NA
+        if x === missing || y === missing
+            return missing
         else
             return new(x,y,z,datum)
         end
