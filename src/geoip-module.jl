@@ -17,15 +17,6 @@ immutable Location <: Point3D
     end
 end
 
-
-lookupgeoname(locs,id::Integer) = locs[findfirst(locs[:geoname_id],id),:]
-
-
-function mapcontains(nets::AbstractArray, addr::IPv4)
-    return map(x->contains(x,addr), nets)
-end
-
-
 function geolocate(ip::IPv4; noupdate=true)
     if updaterequired()
         if !(noupdate)
@@ -61,7 +52,6 @@ function geolocate(ip::IPv4; noupdate=true)
     return retdict
 end
 
-
 function geolocate(iparr::AbstractArray; noupdate=true)
     masterdict = Dict{Symbol, Any}[]
     for el in iparr
@@ -69,7 +59,6 @@ function geolocate(iparr::AbstractArray; noupdate=true)
     end
     return masterdict
 end
-
 
 ######################################
 # deprecations / convenience functions
