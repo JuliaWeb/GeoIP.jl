@@ -1,11 +1,11 @@
+__precompile__()
+
 module GeoIP
 
     using IPNets
     using DataFrames
     using ZipFile
     using GZip
-    using Requests
-    using Compat
 
     export
         # types
@@ -13,5 +13,6 @@ module GeoIP
         # methods
         geolocate
 
+    include("data.jl")
     include("geoip-module.jl")
 end
