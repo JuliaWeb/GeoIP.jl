@@ -3,5 +3,4 @@ IPNets
 DataFrames 0.9.0 0.11.0
 ZipFile 0.2.4
 Requests 0.2.4
-Compat
 GZip
