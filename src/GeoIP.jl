@@ -4,8 +4,6 @@ module GeoIP
     using DataFrames
     using ZipFile
     using GZip
-    using Requests
-    using Compat
 
     export
         # types
@@ -13,5 +11,6 @@ module GeoIP
         # methods
         geolocate
 
+    include("data.jl")
     include("geoip-module.jl")
 end
