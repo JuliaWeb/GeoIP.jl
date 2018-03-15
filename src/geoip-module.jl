@@ -2,7 +2,7 @@
 abstract type Point end
 abstract type Point3D <: Point end
 
-immutable Location <: Point3D
+struct Location <: Point3D
     x::Float64
     y::Float64
     z::Float64
