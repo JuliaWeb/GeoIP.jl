@@ -1,12 +1,14 @@
 import Requests
+import CSV
+import GZip
 
 # Path to directory with data, can define GEOIP_DATADIR to override
 # the default (useful for testing with a smaller test set)
-const DATADIR = haskey(ENV, "GEOIP_DATADIR") ? 
+const DATADIR = haskey(ENV, "GEOIP_DATADIR") ?
     ENV["GEOIP_DATADIR"] :
     joinpath(dirname(@__FILE__), "..", "data")
 
-const MD5 = joinpath(DATADIR, ".md5") 
+const MD5 = joinpath(DATADIR, ".md5")
 const CITYMD5URL = "http://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip.md5"
 const CITYDLURL = "http://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip"
 
@@ -53,12 +55,12 @@ function dldata(md5::String)
     dlcount = 0
     for fn in archive.files
         if contains(string(fn),BLOCKCSV)
-            gzopen(joinpath(DATADIR, BLOCKCSVGZ), "w") do f
+            GZip.open(joinpath(DATADIR, BLOCKCSVGZ), "w") do f
                 write(f, read(fn))
             end
             dlcount += 1
         elseif contains(string(fn),CITYCSV)
-            gzopen(joinpath(DATADIR, CITYCSVGZ), "w") do f
+            GZip.open(joinpath(DATADIR, CITYCSVGZ), "w") do f
                 write(f, read(fn))
             end
             dlcount += 1
@@ -80,24 +82,28 @@ function update()
 end
 
 function load()
-    blockfile = joinpath(DATADIR, BLOCKCSVGZ) 
+    blockfile = joinpath(DATADIR, BLOCKCSVGZ)
     locfile = joinpath(DATADIR, CITYCSVGZ)
 
     blocks = DataFrame()
     locs = DataFrame()
     try
-         blocks = readtable(blockfile)
-         locs = readtable(locfile)
+        blocks = GZip.open(blockfile, "r") do stream
+            CSV.read(stream, nullable=true, types=[String, Int, Int, String, Int, Int, String, Float64, Float64, Int])
+        end
+        locs = GZip.open(locfile, "r") do stream
+            CSV.read(stream, nullable=true, types=[Int, String, String, String, String, String, String, String, String, String, String, Int, String, Int])
+        end
     catch
         error("Geolocation data cannot be read. Data directory may be corrupt...")
     end
-    
+
     # Clean up unneeded columns and map others to appropriate data structures
     delete!(blocks, [:represented_country_geoname_id, :is_anonymous_proxy, :is_satellite_provider])
-    
+
     blocks[:v4net] = map(x -> IPNets.IPv4Net(x), blocks[:network])
     delete!(blocks, :network)
-    
+
     blocks[:location] = map(Location, blocks[:longitude], blocks[:latitude])
     delete!(blocks, [:longitude, :latitude])
 
