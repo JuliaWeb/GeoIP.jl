@@ -15,4 +15,6 @@ module GeoIP
 
     include("data.jl")
     include("geoip-module.jl")
+
+    include("MaxMindDB/MaxMindDB.jl")
 end
