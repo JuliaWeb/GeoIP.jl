@@ -27,6 +27,6 @@ end
     @test decode("0408461C3FF6") == Float32(9999.99)
     @test decode("0408BF800000") == Float32(-1.0)
     @test decode("0408BF8CCCCD") == Float32(-1.1)
-    @test decode("0408C048F5C3") == Float32(3.14)
+    @test decode("0408C048F5C3") == -Float32(3.14)
     @test decode("0408C61C3FF6") == Float32(-9999.99)
 end

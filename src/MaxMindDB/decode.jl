@@ -53,7 +53,11 @@ decode_array(buf) = throw("Not implemented")
 decode_data_cache_container(buf) = throw("Not implemented")     # Date cache container. TODO: What should this type be?
 decode_endmarker(buf) = throw("Not implemented")     # End marker, empty payload.
 decode_bool(buf) = Bool(field_length(buf))
-decode_float(buf) = throw("Not implemented")
+
+function decode_float(buf)
+    d = reinterpret(Float32, buf[3:6])[1]
+    ntoh(d)
+end
 
 
 
