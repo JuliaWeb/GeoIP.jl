@@ -46,7 +46,15 @@ decode_bytes(buf) = thow("Not implemented")
 decode_uint16(buf) = throw("Not implemented")
 decode_uint32(buf) = throw("Not implemented")
 decode_dict(buf) = throw("Not implemented")
-decode_int32(buf) = throw("Not implemented")
+
+function decode_int32(buf)
+    r = Int32(0)
+    for byte in buf[3:3+field_length(buf)-1]
+        r = (r << 8) | Int32(byte)
+    end
+    return r
+end
+
 decode_uint64(buf) = throw("Not implemented")
 decode_uint128(buf) = throw("Not implemented")
 decode_array(buf) = throw("Not implemented")
