@@ -1,4 +1,4 @@
-import Requests
+import HTTP
 import CSV
 import GZip
 
@@ -35,8 +35,8 @@ end
 
 function getmd5()
     try
-        r = Requests.get(CITYMD5URL)
-        return string(r.data)
+        r = HTTP.get(CITYMD5URL)
+        return string(r)
     catch
         error("Failed to download checksum file from MaxMind, check network connectivity")
     end
@@ -46,12 +46,12 @@ updaterequired() = (readmd5() != getmd5())
 
 function dldata(md5::String)
     r = try
-        Requests.get(CITYDLURL)
+        HTTP.get(CITYDLURL)
     catch
         error("Failed to download file from MaxMind, check network connectivity")
     end
 
-    archive = ZipFile.Reader(IOBuffer(r.data))
+    archive = ZipFile.Reader(IOBuffer(r))
     dlcount = 0
     for fn in archive.files
         if contains(string(fn),BLOCKCSV)

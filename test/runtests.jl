@@ -1,6 +1,9 @@
-using Base.Test
+using Test
 using GeoIP
 
+include("decode.jl")
+
+#=
 # Test known result
 ip1 = IPv4("1.2.3.4")
 geoip1 = geolocate(ip1; noupdate=false)
@@ -17,3 +20,5 @@ result = geolocate([ip"1.2.3.4", ip"8.8.8.8"])
 @test length(Set(result)) == 2
 @test !isempty(result[1])
 @test !isempty(result[2])  
+=#
+

@@ -1,3 +1,5 @@
+import Sockets
+
 # It would be great to replace this with a real GIS package.
 abstract type Point end
 abstract type Point3D <: Point end
@@ -17,7 +19,7 @@ struct Location <: Point3D
     end
 end
 
-function geolocate(ip::IPv4; noupdate=true)
+function geolocate(ip::Sockets.IPv4; noupdate=true)
     if updaterequired()
         if !(noupdate)
             update()
@@ -63,14 +65,14 @@ end
 ######################################
 # deprecations / convenience functions
 ######################################
-@deprecate getcountrycode(ip)   geolocate(IPv4(ip))[:country_iso_code]
-@deprecate getcountryname(ip)   geolocate(IPv4(ip))[:country_name]
-@deprecate getregionname(ip)    geolocate(IPv4(ip))[:subdivision_1_name]
-@deprecate getcityname(ip)      geolocate(IPv4(ip))[:city_name]
-@deprecate getpostalcode(ip)    geolocate(IPv4(ip))[:postal_code]
-@deprecate getlongitude(ip)     geolocate(IPv4(ip))[:location].x
-@deprecate getlatitude(ip)      geolocate(IPv4(ip))[:location].y
-@deprecate getmetrocode(ip)     geolocate(IPv4(ip))[:metro_code]
-@deprecate getareacode(ip)      geolocate(IPv4(ip))[:metro_code]
-@deprecate geolocate(ipstr::AbstractString) geolocate(IPv4(ipstr))
-@deprecate geolocate(ipint::Integer) geolocate(IPv4(ipint))
+@deprecate getcountrycode(ip)   geolocate(Sockets.IPv4(ip))[:country_iso_code]
+@deprecate getcountryname(ip)   geolocate(Sockets.IPv4(ip))[:country_name]
+@deprecate getregionname(ip)    geolocate(Sockets.IPv4(ip))[:subdivision_1_name]
+@deprecate getcityname(ip)      geolocate(Sockets.IPv4(ip))[:city_name]
+@deprecate getpostalcode(ip)    geolocate(Sockets.IPv4(ip))[:postal_code]
+@deprecate getlongitude(ip)     geolocate(Sockets.IPv4(ip))[:location].x
+@deprecate getlatitude(ip)      geolocate(Sockets.IPv4(ip))[:location].y
+@deprecate getmetrocode(ip)     geolocate(Sockets.IPv4(ip))[:metro_code]
+@deprecate getareacode(ip)      geolocate(Sockets.IPv4(ip))[:metro_code]
+@deprecate geolocate(ipstr::AbstractString) geolocate(Sockets.IPv4(ipstr))
+@deprecate geolocate(ipint::Integer) geolocate(Sockets.IPv4(ipint))
