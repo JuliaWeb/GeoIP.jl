@@ -56,8 +56,24 @@ function decode_double(buf)
 end
 
 decode_bytes(buf) = thow("Not implemented")
-decode_uint16(buf) = throw("Not implemented")
-decode_uint32(buf) = throw("Not implemented")
+
+function decode_uint16(buf)
+    r = 0x0000
+    l = field_length(buf)
+    for byte in buf[2:(2 + l - 1)]
+        r = (r << 8) | UInt16(byte)
+    end
+   return r, l + 1
+end
+
+function decode_uint32(buf) 
+    r = 0x00000000
+    l = field_length(buf)
+    for byte in buf[2:(2 + l -1)]
+        r = (r << 8) | UInt32(byte)
+    end
+    return r, l + 1
+end
 
 function decode_dict(buf)
     # field length indicates number of pairs for dicts
@@ -94,8 +110,23 @@ function decode_int32(buf)
     return r, 2 + l
 end
 
-decode_uint64(buf) = throw("Not implemented")
-decode_uint128(buf) = throw("Not implemented")
+function decode_uint64(buf)
+    r = zero(UInt64)
+    l = field_length(buf)
+    for byte in buf[3:(3+l-1)]
+        r = (r << 8) | UInt64(byte)
+    end
+    return r, 2 + l
+end
+
+function decode_uint128(buf)
+    r = zero(UInt128)
+    l = field_length(buf)
+    for byte in buf[3:(3 + l - 1)]
+        r = (r << 8) | UInt128(byte)
+    end
+    return r, 2 + l
+end
 
 function decode_array(buf)
     # field length indicates number of elements for arrays
@@ -122,11 +153,14 @@ end
 
 decode_data_cache_container(buf) = throw("Not implemented")     # Date cache container. TODO: What should this type be?
 decode_endmarker(buf) = throw("Not implemented")     # End marker, empty payload.
-decode_bool(buf) = Bool(field_length(buf))
+
+function decode_bool(buf)
+    return Bool(field_length(buf)), 1
+end
 
 function decode_float(buf)
     d = reinterpret(Float32, buf[3:6])[1]
-    ntoh(d), 6
+    return ntoh(d), 6
 end
 
 const decoders = Dict{UInt8, Any}(

@@ -46,6 +46,36 @@ end
     @test decode("040180000001") == -2147483647
 end
 
+@testset "UInt16 Decoding" begin
+    @test decode("a0") == UInt16(0)
+    @test decode("a1ff") ==  UInt16(255)
+    @test decode("a201f4") == UInt16(500)
+    @test decode("a22a78") == UInt16(10872)
+    @test decode("a2ffff") == UInt16(65535)
+end
+
+@testset "UInt32 Decoding" begin
+    @test decode("c0") == UInt32(0)
+    @test decode("c1ff")== UInt32(255)
+    @test decode("c201f4") == UInt32(500)
+    @test decode("c22a78") == UInt32(10872)
+    @test decode("c2ffff") == UInt32(65535)
+    @test decode("c3ffffff") == UInt32(16777215)
+    @test decode("c4ffffffff") == UInt32(4294967295)
+end
+
+@testset "UInt64 Decoding" begin
+    @test decode("0002") == UInt64(0)
+    @test decode("020201f4") == UInt64(500)
+    @test decode("02022a78") == UInt64(10872)
+end
+
+@testset "UInt128 Decoding" begin
+    @test decode("0003") == UInt128(0)
+	@test decode("020301f4") == UInt128(500)
+    @test decode("02032a78") == UInt128(10872)
+end
+
 @testset "Array Decoding" begin
     @test decode("0004") == []
 	@test decode("010443466f6f") == ["Foo"]
