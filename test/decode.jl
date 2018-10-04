@@ -45,3 +45,26 @@ end
     @test decode("04017fffffff") == 2147483647
     @test decode("040180000001") == -2147483647
 end
+
+@testset "Dictionary Decoding" begin
+    @test decode("e0") == Dict()
+    @test decode("e142656e43466f6f") == Dict("en" => "Foo")
+	@test decode("e242656e43466f6f427a6843e4baba") == Dict("en" => "Foo", "zh" => "人")
+	@test decode("e1446e616d65e242656e43466f6f427a6843e4baba") == Dict("name" => Dict("en" => "Foo", "zh" => "人"))
+    @test decode("e1496c616e677561676573020442656e427a68") == Dict("languages" => Dict("en" => "zh"))
+end
+
+@testset "String Decoding" begin
+    @test decode("40") == ""
+    @test decode("4131") == "1"
+	@test decode("43E4BABA") == "人"
+	@test decode("5b313233343536373839303132333435363738393031323334353637") == "123456789012345678901234567"
+    @test decode("5c31323334353637383930313233343536373839303132333435363738") == "1234567890123456789012345678"
+	@test decode("5d003132333435363738393031323334353637383930313233343536373839") == "12345678901234567890123456789"
+	@test decode("5d01313233343536373839303132333435363738393031323334353637383930") == "123456789012345678901234567890"
+
+    # Long strings
+    for (key, value) in Dict("5e00d7" => 500, "5e06b3" => 2000, "5f001053" => 70000)
+		@test decode("$key" * repeat("78", value)) == repeat("x", value)
+    end
+end

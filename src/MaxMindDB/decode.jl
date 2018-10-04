@@ -13,18 +13,18 @@ end
 
 function field_length(buf)
     # Mask first 3 bits
-    first = buf[1] & 0x1f  # 00011111
+    first = Int(buf[1] & 0x1f)  # 00011111
     if first < 29
-        return UInt(first)
+        return first
     elseif first == 29
-        return UInt(first) + 29
+        return UInt(buf[2]) + 29
     elseif first == 30
         val = 285
-        val += UInt(buf[2] << 8) | UInt(buf[3])
+        val += (UInt(buf[2]) << 8) | UInt(buf[3])
         return val
     elseif first == 31
-        val = 65_821
-        val += UInt(buf[2] << 16) | UInt(buf[3] << 8) | UInt(buf[4])
+        val = UInt(65_821)
+        val += (UInt(buf[2]) << 16) | (UInt(buf[3]) << 8) | UInt(buf[4])
         return val
     end
 end
@@ -35,7 +35,20 @@ function decode(buf)
 end
 
 decode_pointer(buf) = throw("Now implemented")
-decode_string(buf) = throw("Not implemented")
+
+function decode_string(buf)
+    l = field_length(buf)
+    if l < 29
+        offset = 2
+    elseif 29 <= l < 285
+        offset = 3
+    elseif 265 <= l < 65_821
+        offset = 4
+    else
+        offset = 5
+    end
+    transcode(String, buf[offset:(offset+l-1)])
+end
 
 function decode_double(buf)
     d = reinterpret(Float64, buf[2:9])[1]
@@ -66,8 +79,6 @@ function decode_float(buf)
     d = reinterpret(Float32, buf[3:6])[1]
     ntoh(d)
 end
-
-
 
 const decoders = Dict{UInt8, Any}(
     1  => decode_pointer,
