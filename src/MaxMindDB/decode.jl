@@ -34,7 +34,18 @@ function decode(buf)
     return d(buf)
 end
 
-decode_pointer(buf) = throw("Now implemented")
+function decode_pointer(buf)
+    size = ((buf[1] >> 3) & 0x03) + 1
+    bytes = buf[2:(2 + size - 1)]    
+    if size == 4
+        prefix = zero(UInt)
+    else
+        prefix = UInt(size & 0x07)
+    end
+
+    # TODO: FINISH ME
+
+end
 
 function decode_string(buf)
     l = field_length(buf)

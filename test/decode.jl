@@ -1,5 +1,7 @@
 using Test
-using GeoIP
+import Mmap
+
+import GeoIP
 
 decode(x) = hex2bytes(x) |> GeoIP.MaxMindDB.decode |> x -> x[1]
 
@@ -103,4 +105,15 @@ end
     for (key, value) in Dict("5e00d7" => 500, "5e06b3" => 2000, "5f001053" => 70000)
 		@test decode("$key" * repeat("78", value)) == repeat("x", value)
     end
+end
+
+@testset "Pointer Decoding" begin
+    buf = Mmap.mmap(open("maps-with-pointers.raw"), Vector{UInt8})
+
+    @test decode(buf[1:end]) == Dict("long_key" => "long_value1")
+	@test decode(buf[23:end]) == Dict("long_key" => "long_value2")
+	@test decode(buf[38:end]) == Dict("long_key2" => "long_value1")
+	@test decode(buf[51:end]) == Dict("long_key2" => "long_value2")
+	@test decode(buf[56:end]) == Dict("long_key" => "long_value1")
+	@test decode(buf[58:end]) == Dict("long_key2" => "long_value2")
 end
