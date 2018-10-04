@@ -3,7 +3,7 @@ import Mmap
 
 import GeoIP
 
-decode(x) = hex2bytes(x) |> GeoIP.MaxMindDB.decode |> x -> x[1]
+decode(x) = hex2bytes(x) |> GeoIP.MaxMindDB.DB |> GeoIP.MaxMindDB.decode
 
 @testset "Boolean Decoding" begin
     @test decode("0007") == false
@@ -108,12 +108,19 @@ end
 end
 
 @testset "Pointer Decoding" begin
-    buf = Mmap.mmap(open("maps-with-pointers.raw"), Vector{UInt8})
+    db = GeoIP.MaxMindDB.DB("maps-with-pointers.raw")
+    data = Dict(
+        1 => Dict("long_key" => "long_value1"),
+	    23 => Dict("long_key" => "long_value2"),
+	    38 => Dict("long_key2" => "long_value1"),
+	    51 => Dict("long_key2" => "long_value2"),
+	    56 => Dict("long_key" => "long_value1"),
+        58 => Dict("long_key2" => "long_value2")
+    )
 
-    @test decode(buf[1:end]) == Dict("long_key" => "long_value1")
-	@test decode(buf[23:end]) == Dict("long_key" => "long_value2")
-	@test decode(buf[38:end]) == Dict("long_key2" => "long_value1")
-	@test decode(buf[51:end]) == Dict("long_key2" => "long_value2")
-	@test decode(buf[56:end]) == Dict("long_key" => "long_value1")
-	@test decode(buf[58:end]) == Dict("long_key2" => "long_value2")
+    for (ptr, dict) in data
+        db.index = ptr
+        decoded = GeoIP.MaxMindDB.decode(db)
+        @test decoded == dict
+    end
 end
