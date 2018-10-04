@@ -1,7 +1,7 @@
 using Test
 using GeoIP
 
-decode(x) = hex2bytes(x) |> GeoIP.MaxMindDB.decode
+decode(x) = hex2bytes(x) |> GeoIP.MaxMindDB.decode |> x -> x[1]
 
 @testset "Boolean Decoding" begin
     @test decode("0007") == false
@@ -46,12 +46,18 @@ end
     @test decode("040180000001") == -2147483647
 end
 
+@testset "Array Decoding" begin
+    @test decode("0004") == []
+	@test decode("010443466f6f") == ["Foo"]
+    @test decode("020443466f6f43e4baba") == ["Foo", "人"]
+end
+
 @testset "Dictionary Decoding" begin
     @test decode("e0") == Dict()
     @test decode("e142656e43466f6f") == Dict("en" => "Foo")
 	@test decode("e242656e43466f6f427a6843e4baba") == Dict("en" => "Foo", "zh" => "人")
 	@test decode("e1446e616d65e242656e43466f6f427a6843e4baba") == Dict("name" => Dict("en" => "Foo", "zh" => "人"))
-    @test decode("e1496c616e677561676573020442656e427a68") == Dict("languages" => Dict("en" => "zh"))
+    @test decode("e1496c616e677561676573020442656e427a68") == Dict("languages" => ["en", "zh"])
 end
 
 @testset "String Decoding" begin

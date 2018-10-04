@@ -47,37 +47,86 @@ function decode_string(buf)
     else
         offset = 5
     end
-    transcode(String, buf[offset:(offset+l-1)])
+    return transcode(String, buf[offset:(offset+l-1)]), offset + l - 1
 end
 
 function decode_double(buf)
     d = reinterpret(Float64, buf[2:9])[1]
-    ntoh(d)
+    return ntoh(d), 9
 end
 
 decode_bytes(buf) = thow("Not implemented")
 decode_uint16(buf) = throw("Not implemented")
 decode_uint32(buf) = throw("Not implemented")
-decode_dict(buf) = throw("Not implemented")
+
+function decode_dict(buf)
+    # field length indicates number of pairs for dicts
+    pairs = field_length(buf)
+    if pairs < 29
+        length = 1
+    elseif 29 <= pairs < 285
+        length = 2
+    elseif 265 <= l < 65_821
+        length = 3
+    else
+        length = 4
+    end
+    dict = Dict{String, Any}()
+    
+    for pair in 1:pairs
+        key, decoded = decode(buf[(length + 1):end])
+        length += decoded
+        value, decoded = decode(buf[(length + 1):end])
+        length += decoded
+
+        dict[key] = value
+    end
+
+    return dict, length
+end
 
 function decode_int32(buf)
     r = Int32(0)
-    for byte in buf[3:3+field_length(buf)-1]
+    l = field_length(buf)
+    for byte in buf[3:3+l-1]
         r = (r << 8) | Int32(byte)
     end
-    return r
+    return r, 2 + l
 end
 
 decode_uint64(buf) = throw("Not implemented")
 decode_uint128(buf) = throw("Not implemented")
-decode_array(buf) = throw("Not implemented")
+
+function decode_array(buf)
+    # field length indicates number of elements for arrays
+    eles = field_length(buf)
+    if eles < 29
+        length = 2
+    elseif 29 <= eles < 285
+        length = 2
+    elseif 265 <= eles < 65_821
+        length = 3
+    else
+        length = 4
+    end
+    
+    arr = []
+
+    for ele in 1:eles
+        value, decoded = decode(buf[(length + 1):end])
+        length += decoded
+        push!(arr, value)
+    end
+    return arr, length
+end
+
 decode_data_cache_container(buf) = throw("Not implemented")     # Date cache container. TODO: What should this type be?
 decode_endmarker(buf) = throw("Not implemented")     # End marker, empty payload.
 decode_bool(buf) = Bool(field_length(buf))
 
 function decode_float(buf)
     d = reinterpret(Float32, buf[3:6])[1]
-    ntoh(d)
+    ntoh(d), 6
 end
 
 const decoders = Dict{UInt8, Any}(
