@@ -1,54 +1,29 @@
-import Mmap
-
-# Maxmind Database specification.
-# See http://maxmind.github.io/MaxMind-DB/ for details
 export decode
 
 
-mutable struct DB
-    buffer::Vector{UInt8}
-    index::Int 
-end
-
-
-function DB(buffer::Vector{UInt8})
-    return DB(buffer, 1)
-end
-
-
-function DB(filename::String; mode=:mmap)
-    db = if mode == :mmap
-        f = open(filename, "r")
-        buf = Mmap.mmap(f, Vector{UInt8})
-        DB(buf)
-    elseif mode == :ram
-        open(filename, "r") do f
-            buf = read(f)
-            DB(buf)
-        end
-    else
-        throw("Mode $mode not recognized")
-    end
-    
-    return db
-end
-
-
+# Returns the type of a field. 
+#
+# The type is a number from 1 - 15. If the type is in [1, 7] then the first 
+# three bits are the type. If not these bits are equal to zero and the type is 
+# "extended". In this case the next byte plus 7 is the type.
 function field_type(db::DB) 
     b, i = db.buffer, db.index
-    if b[i] >> 0x05 == 0x00
-        # Extended data type, look in next byte for value and
-        # return value plus 7 for some reason..
+    n = b[i] >> 0x05
+    if n == 0x00
         return b[i + 1] + 0x07
     end
-    return b[i] >> 0x05
+    return n
 end
 
-
+# Returns the length of the data section of the field
+#
+# Length information of a field is encoded in the last 5 bits of the first byte.
+# In the case where the length overflows the those 5 bits, subsequent bytes are
+# used to specify the length.
 function field_length(db::DB)
     b, i = db.buffer, db.index
     # Mask first 3 bits
-    first = Int(b[i] & 0x1f)  # 00011111
+    first = Int(b[i] & 0x1f)
     if first < 29
         return first
     elseif first == 29
@@ -65,17 +40,36 @@ function field_length(db::DB)
 end
 
 
+"""
+    decode(db::DB, [i])
+
+Returns the field value at the databases current or, optionally, a specified
+location.
+"""
 function decode(db::DB)
     dec = decoders[field_type(db)]
     return dec(db)
 end
 
 
+function decode(db::DB, i)
+    db.index = i
+    return decode(db)
+end
+
+
 function decode_pointer(db::DB)
     b, i = db.buffer, db.index
 
+    # Pointers are different than most fields. First byte has the format
+    # "001SSVVV" where S refers to the size of the pointer and V refers to the 
+    # value of the pointer. If the value overflows 3 bits, subsequent bytes are
+    # used to encode the value.
     size = ((b[i] >> 3) & 0x03)
     bytes = b[(i + 1):(i + 1 + size)]    
+    
+    # If the size == 3, we ignore the values in the first byte and just
+    # take the proceding bytes instead.
     value = size == 3 ? zero(UInt) : UInt(size & 0x07)
 
     for byte in bytes
@@ -88,11 +82,11 @@ function decode_pointer(db::DB)
         value += UInt(526336)
     end
 
-    # Set index to point and decode the field it references
+    # Set index to pointer value and decode the field it references
     db.index = value + 1 
     decoded = decode(db)
 
-    # After resolving the pointer set the index directly after the
+    # After resolving the pointer, set the index directly after the
     # pointer field. This is critical for correctly traversing arrays
     # and dictionaries that contain pointers.
     db.index = i + size + 2
@@ -238,8 +232,8 @@ function decode_array(db::DB)
 end
 
 
-decode_data_cache_container(buf) = throw("Not implemented")     # Date cache container. TODO: What should this type be?
-decode_endmarker(buf) = throw("Not implemented")     # End marker, empty payload.
+decode_data_cache_container(buf) = throw("Not implemented") 
+decode_endmarker(buf) = throw("Not implemented")
 
 
 function decode_bool(db)
