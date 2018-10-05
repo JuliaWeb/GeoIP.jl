@@ -74,17 +74,17 @@ end
 function decode_pointer(db::DB)
     b, i = db.buffer, db.index
 
-    size = ((b[i] >> 3) & 0x03) + 1
-    bytes = b[(i + 1):(i + size - 1)]    
-    value = size == 4 ? zero(UInt) : UInt(size & 0x07)
+    size = ((b[i] >> 3) & 0x03)
+    bytes = b[(i + 1):(i + 1 + size)]    
+    value = size == 3 ? zero(UInt) : UInt(size & 0x07)
 
     for byte in bytes
         value = (value << 8) | UInt(byte)
     end
 
-    if size == 2
+    if size == 1
         value += UInt(2048)
-    elseif size == 3
+    elseif size == 2
         value += UInt(526336)
     end
 
@@ -95,7 +95,7 @@ function decode_pointer(db::DB)
     # After resolving the pointer set the index directly after the
     # pointer field. This is critical for correctly traversing arrays
     # and dictionaries that contain pointers.
-    db.index = i + size + 1
+    db.index = i + size + 2
     return decoded
 end
 
