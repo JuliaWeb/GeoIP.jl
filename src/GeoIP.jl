@@ -1,7 +1,6 @@
 module GeoIP
 
     using IPNets
-    using DataFrames
     using ZipFile
     using GZip
 
