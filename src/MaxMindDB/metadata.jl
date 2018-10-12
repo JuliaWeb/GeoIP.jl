@@ -42,5 +42,5 @@ end
 
 
 function treesize(db::DB)
-    return (recordsize(db) / 4) * nodecount(db)
+    return (recordsize(db) >> 2) * nodecount(db)
 end

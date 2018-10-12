@@ -1,22 +1,38 @@
 using Sockets
 
 
-function asbits(ip::IPAddr)
+function asbits(ip::IPv4)
+    return UInt32(ip)
+end
+
+
+function asbits(ip::IPv6)
     return UInt128(ip)
 end
 
 
 function firstnode(db::DB)
     size = recordsize(db)
-    width = 2 * size
-    return db.buffer[1:(width - 1)]
+    width = size >> 2
+    return db.buffer[1:width]
+end
+
+
+function firstIPv4node(db::DB)
+    node = firstnode(db)
+    next = zero(UInt)
+    for i in 1:96
+        next = left(node)
+        node = nextnode(db, next)
+    end
+    return node
 end
 
 
 function nextnode(db::DB, next)
     size = recordsize(db)
-    width = 2 * size
-    return db.buffer[(next * width):(((next + 1) * width) - 1)]    
+    width = size >> 2
+    return db.buffer[((next * width) + 1):((next + 1) * width)]    
 end
 
 
@@ -32,7 +48,7 @@ end
 
 function right(node)
     size = length(node)
-    r = isodd(size) ? UInt(node[(size >> 1) + 1] & 0xF0) : zero(UInt)
+    r = isodd(size) ? UInt(node[(size >> 1) + 1] & 0x0F) : zero(UInt)
     for byte in node[((size >> 1) + 2):end]
         r = (r << 8) | UInt(byte)
     end
@@ -40,20 +56,23 @@ function right(node)
 end
 
 
-function lookup(db::DB, ip::IPAddr)
+function lookup(db::DB, ip::IPv4)
     bits = asbits(ip)
     nodes = nodecount(db)
-    node = firstnode(db)
-    for i in 1:128
-        global _next = Bool(((bits >> i) & 1)) ? right(node) : left(node)
-        if _next < nodes
+    node = firstIPv4node(db)
+    next = zero(UInt) 
+    for i in 0:31
+        next = Bool(((bits >> i) & 1)) ? right(node) : left(node)
+        println("Next node: $(Int(next)) / $(Int(nodes))")
+        if next < nodes
             node = nextnode(db, next)
-        elseif _next == nodes
+        elseif next == nodes
             return nothing
         else
             break
         end
     end
-    ptr = (_next - nodes) + treesize(db)
+    println("Found something! 'next' == $next")
+    ptr = (next - nodes) + treesize(db) + 1
     return decode(db, ptr)
 end

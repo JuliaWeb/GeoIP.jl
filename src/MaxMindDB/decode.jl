@@ -120,7 +120,16 @@ function decode_double(db::DB)
 end
 
 
-decode_bytes(buf) = thow("Not implemented")
+function decode_bytes(db::DB)
+    b, i = db.buffer, db.index
+    l = field_length(db)
+    out = UInt8[]
+    for byte in b[(i + 1):(i + l)]
+        push!(out, byte)
+    end
+    db.index += l + 2
+    return out
+end
 
 
 function decode_uint16(db::DB)
