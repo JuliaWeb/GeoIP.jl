@@ -1,17 +1,15 @@
 module GeoIP
 
     using IPNets
-    using ZipFile
-    using GZip
-
     export
         # types
         Location,
         # methods
         geolocate
+    
+    include("MaxMindDB/MaxMindDB.jl")
 
     include("data.jl")
     include("geoip-module.jl")
 
-    include("MaxMindDB/MaxMindDB.jl")
 end

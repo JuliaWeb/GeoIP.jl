@@ -3,7 +3,7 @@ export metadata
 const marker = b"\xab\xcd\xefMaxMind.com"
 
 # Cache for metadata calls
-const cache = Dict{DB, Any}()
+const cache = Dict{DB, Dict{String, Any}}()
 
 """
     metadata(db::DB) -> Dict

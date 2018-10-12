@@ -1,7 +1,13 @@
 using Test
 using GeoIP
 
-include("decode.jl")
+@testset "Decoding" begin
+    include("decode.jl")
+end
+
+@testset "Metadata" begin
+    include("metadata.jl")
+end
 
 #=
 # Test known result

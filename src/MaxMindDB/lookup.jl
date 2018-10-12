@@ -16,7 +16,7 @@ end
 function nextnode(db::DB, next)
     size = recordsize(db)
     width = 2 * size
-    return db.buffer[((next * width):(((next + 1) * width) - 1)]    
+    return db.buffer[(next * width):(((next + 1) * width) - 1)]    
 end
 
 
@@ -45,15 +45,15 @@ function lookup(db::DB, ip::IPAddr)
     nodes = nodecount(db)
     node = firstnode(db)
     for i in 1:128
-        next = ((bits >> i) & 1) ? right(node) : left(node)
-        if next < nodes
+        global _next = Bool(((bits >> i) & 1)) ? right(node) : left(node)
+        if _next < nodes
             node = nextnode(db, next)
-        elseif next == nodes
+        elseif _next == nodes
             return nothing
         else
             break
         end
     end
-    ptr = (next - nodes) + treesize(db)
+    ptr = (_next - nodes) + treesize(db)
     return decode(db, ptr)
 end
