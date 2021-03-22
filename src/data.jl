@@ -1,7 +1,3 @@
-import Requests
-import CSV
-import GZip
-
 # Path to directory with data, can define GEOIP_DATADIR to override
 # the default (useful for testing with a smaller test set)
 const DATADIR = haskey(ENV, "GEOIP_DATADIR") ?
@@ -35,7 +31,7 @@ end
 
 function getmd5()
     try
-        r = Requests.get(CITYMD5URL)
+        r = HTTP.get(CITYMD5URL)
         return string(r.data)
     catch
         error("Failed to download checksum file from MaxMind, check network connectivity")
@@ -46,7 +42,7 @@ updaterequired() = (readmd5() != getmd5())
 
 function dldata(md5::String)
     r = try
-        Requests.get(CITYDLURL)
+        HTTP.get(CITYDLURL)
     catch
         error("Failed to download file from MaxMind, check network connectivity")
     end

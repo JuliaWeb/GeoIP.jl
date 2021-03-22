@@ -1,19 +1,25 @@
-using Base.Test
-using GeoIP
+module TestGeoIP
 
-# Test known result
-ip1 = IPv4("1.2.3.4")
-geoip1 = geolocate(ip1; noupdate=false)
-@test geoip1[:country_iso_code] == "US"
-@test geoip1[:metro_code] == 819
-@test ceil(Int, geoip1[:location].x) == -122
+using Test
 
-# Test null results
-@test isempty(geolocate(ip"0.0.0.0"))
-@test isempty(geolocate(ip"127.0.0.1"))
+for file in sort([file for file in readdir(@__DIR__) if
+                                   occursin(r"^test[_0-9]+.*\.jl$", file)])
+    m = match(r"test([0-9]+)_(.*).jl", file)
+    filename = String(m[2])
+    testnum = string(parse(Int, m[1]))
 
-# Test array of ip's
-result = geolocate([ip"1.2.3.4", ip"8.8.8.8"])
-@test length(Set(result)) == 2
-@test !isempty(result[1])
-@test !isempty(result[2])  
+    # with this test one can run only specific tests, for example
+    # Pkg.test("Telegram", test_args = ["xxx"])
+    # or
+    # Pkg.test("Telegram", test_args = ["1"])
+    if isempty(ARGS) || (filename in ARGS) || (testnum in ARGS) || (m[1] in ARGS)
+        @testset "$filename" begin
+            # Here you can optionally exclude some test files
+            # VERSION < v"1.1" && file == "test_xxx.jl" && continue
+
+            include(file)
+        end
+    end
+end
+
+end # module
