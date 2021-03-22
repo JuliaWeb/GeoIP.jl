@@ -1,7 +1,0 @@
-julia 0.6
-IPNets
-DataFrames 0.11.0
-CSV
-ZipFile 0.2.4
-Requests 0.2.4
-GZip
