@@ -12,7 +12,8 @@ export
     # types
     Location,
     # methods
-    geolocate
+    geolocate,
+    load
 
 include("data.jl")
 include("geoip-module.jl")

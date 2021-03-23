@@ -23,6 +23,11 @@ end
 ########################################
 # Geolocation functions
 ########################################
+"""
+    geolocate(ip, noupdate = true)
+
+Returns geolocation and other information determined by `ip`. If `noupdate` is `true`, then no updates check is performed and current data is used for the location lookup.
+"""
 function geolocate(ip::IPv4; noupdate = true)
     if !noupdate
         if updaterequired()
