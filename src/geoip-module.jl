@@ -1,3 +1,6 @@
+########################################
+# Location structure
+########################################
 # It would be great to replace this with a real GIS package.
 abstract type Point end
 abstract type Point3D <: Point end
@@ -8,16 +11,19 @@ struct Location <: Point3D
     z::Float64
     datum::String
 
-    function Location(x,y,z=0, datum="WGS84")
+    function Location(x, y, z = 0, datum = "WGS84")
         if x === missing || y === missing
             return missing
         else
-            return new(x,y,z,datum)
+            return new(x, y, z, datum)
         end
     end
 end
 
-function geolocate(ip::IPv4; noupdate=true)
+########################################
+# Geolocation functions
+########################################
+function geolocate(ip::IPv4; noupdate = true)
     if updaterequired()
         if !(noupdate)
             update()
@@ -52,25 +58,13 @@ function geolocate(ip::IPv4; noupdate=true)
     return retdict
 end
 
-function geolocate(iparr::AbstractArray; noupdate=true)
+function geolocate(iparr::AbstractArray; noupdate = true)
     masterdict = Dict{Symbol, Any}[]
     for el in iparr
-        push!(masterdict, geolocate(el; noupdate=noupdate))
+        push!(masterdict, geolocate(el; noupdate = noupdate))
     end
     return masterdict
 end
 
-######################################
-# deprecations / convenience functions
-######################################
-@deprecate getcountrycode(ip)   geolocate(IPv4(ip))[:country_iso_code]
-@deprecate getcountryname(ip)   geolocate(IPv4(ip))[:country_name]
-@deprecate getregionname(ip)    geolocate(IPv4(ip))[:subdivision_1_name]
-@deprecate getcityname(ip)      geolocate(IPv4(ip))[:city_name]
-@deprecate getpostalcode(ip)    geolocate(IPv4(ip))[:postal_code]
-@deprecate getlongitude(ip)     geolocate(IPv4(ip))[:location].x
-@deprecate getlatitude(ip)      geolocate(IPv4(ip))[:location].y
-@deprecate getmetrocode(ip)     geolocate(IPv4(ip))[:metro_code]
-@deprecate getareacode(ip)      geolocate(IPv4(ip))[:metro_code]
-@deprecate geolocate(ipstr::AbstractString) geolocate(IPv4(ipstr))
-@deprecate geolocate(ipint::Integer) geolocate(IPv4(ipint))
+geolocate(ipstr::AbstractString; noupdate = true) = geolocate(IPv4(ipstr); noupdate = noupdate)
+geolocate(ipint::Integer; noupdate = true) = geolocate(IPv4(ipint); noupdate = noupdate)
