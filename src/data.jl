@@ -23,7 +23,7 @@ function readmd5()
             strip(readline(f))
         end
     else
-        info("Failed to find checksum file, updating data...")
+        @info "Failed to find checksum file, updating data..."
         update()
         readmd5()
     end
@@ -34,7 +34,7 @@ function getmd5()
         r = HTTP.get(CITYMD5URL)
         return string(r.data)
     catch
-        error("Failed to download checksum file from MaxMind, check network connectivity")
+        @error "Failed to download checksum file from MaxMind, check network connectivity"
     end
 end
 
@@ -44,7 +44,7 @@ function dldata(md5::String)
     r = try
         HTTP.get(CITYDLURL)
     catch
-        error("Failed to download file from MaxMind, check network connectivity")
+        @error "Failed to download file from MaxMind, check network connectivity"
     end
 
     archive = ZipFile.Reader(IOBuffer(r.data))
@@ -68,7 +68,7 @@ function dldata(md5::String)
             write(f, md5)
         end
     else
-        error("Problem with download: only $dlcount of 2 files downloaded")
+        @error "Problem with download: only $dlcount of 2 files downloaded"
     end
 end
 
@@ -77,34 +77,37 @@ function update()
     global dataloaded = false
 end
 
-function load()
-    blockfile = joinpath(DATADIR, BLOCKCSVGZ)
-    locfile = joinpath(DATADIR, CITYCSVGZ)
+function load(datadir = DATADIR)
+    blockfile = joinpath(datadir, BLOCKCSVGZ)
+    locfile = joinpath(datadir, CITYCSVGZ)
 
-    blocks = DataFrame()
-    locs = DataFrame()
+    local blocks
+    local locs
     try
         blocks = GZip.open(blockfile, "r") do stream
-            CSV.read(stream, nullable=true, types=[String, Int, Int, String, Int, Int, String, Float64, Float64, Int])
+            CSV.File(read(stream)) |> DataFrame
+            # CSV.File(stream, types=[String, Int, Int, String, Int, Int, String, Float64, Float64, Int]) |> DataFrame
         end
         locs = GZip.open(locfile, "r") do stream
-            CSV.read(stream, nullable=true, types=[Int, String, String, String, String, String, String, String, String, String, String, Int, String, Int])
+            # CSV.File(stream, types=[Int, String, String, String, String, String, String, String, String, String, String, Int, String, Int]) |> DataFrame
+            CSV.File(read(stream)) |> DataFrame
         end
     catch
-        error("Geolocation data cannot be read. Data directory may be corrupt...")
+        @error "Geolocation data cannot be read. Data directory may be corrupt..."
     end
 
     # Clean up unneeded columns and map others to appropriate data structures
-    delete!(blocks, [:represented_country_geoname_id, :is_anonymous_proxy, :is_satellite_provider])
+    select!(blocks, Not([:represented_country_geoname_id, :is_anonymous_proxy, :is_satellite_provider]))
 
-    blocks[:v4net] = map(x -> IPNets.IPv4Net(x), blocks[:network])
-    delete!(blocks, :network)
+    blocks[!, :v4net] = map(x -> IPNets.IPv4Net(x), blocks[!, :network])
+    select!(blocks, Not(:network))
 
-    blocks[:location] = map(Location, blocks[:longitude], blocks[:latitude])
-    delete!(blocks, [:longitude, :latitude])
+    blocks[!, :location] = map(Location, blocks[!, :longitude], blocks[!, :latitude])
+    select!(blocks, Not([:longitude, :latitude]))
+    blocks.geoname_id = map(x -> ismissing(x) ? -1 : Int(x), blocks.geoname_id)
 
-    alldata = join(blocks, locs, on=:geoname_id, kind=:inner)
+    alldata = leftjoin(blocks, locs, on = :geoname_id)
 
     global dataloaded = true
-    global geodata = sort(alldata, cols=[:v4net])
+    global geodata = sort(alldata, :v4net)
 end
