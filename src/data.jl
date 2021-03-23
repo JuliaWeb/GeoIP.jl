@@ -77,20 +77,20 @@ function update()
     global dataloaded = false
 end
 
-function load()
-    blockfile = joinpath(DATADIR, BLOCKCSVGZ)
-    locfile = joinpath(DATADIR, CITYCSVGZ)
+function load(datadir = DATADIR)
+    blockfile = joinpath(datadir, BLOCKCSVGZ)
+    locfile = joinpath(datadir, CITYCSVGZ)
 
     local blocks
     local locs
     try
         blocks = GZip.open(blockfile, "r") do stream
-            CSV.File(stream) |> DataFrame
+            CSV.File(read(stream)) |> DataFrame
             # CSV.File(stream, types=[String, Int, Int, String, Int, Int, String, Float64, Float64, Int]) |> DataFrame
         end
         locs = GZip.open(locfile, "r") do stream
             # CSV.File(stream, types=[Int, String, String, String, String, String, String, String, String, String, String, Int, String, Int]) |> DataFrame
-            CSV.File(stream) |> DataFrame
+            CSV.File(read(stream)) |> DataFrame
         end
     catch
         @error "Geolocation data cannot be read. Data directory may be corrupt..."

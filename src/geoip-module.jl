@@ -53,21 +53,13 @@ function geolocate(ip::IPv4; noupdate = true)
     end
 
     # TODO: sentinel value should be returned
-    retdict = Dict{Symbol, Any}()
+    retdict = Dict{String, Any}()
     if (found > 0) && ip in geodata[found, :v4net]
         # Placeholder, should be removed
         row = geodata[found, :]
         return Dict(collect(zip(names(row), row)))
     end
     return retdict
-end
-
-function geolocate(iparr::AbstractArray; noupdate = true)
-    masterdict = Dict{Symbol, Any}[]
-    for el in iparr
-        push!(masterdict, geolocate(el; noupdate = noupdate))
-    end
-    return masterdict
 end
 
 geolocate(ipstr::AbstractString; noupdate = true) = geolocate(IPv4(ipstr); noupdate = noupdate)
