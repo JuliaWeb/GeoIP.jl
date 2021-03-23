@@ -24,16 +24,14 @@ end
 # Geolocation functions
 ########################################
 function geolocate(ip::IPv4; noupdate = true)
-    if updaterequired()
-        if !(noupdate)
+    if !noupdate
+        if updaterequired()
             update()
-        else
-            warn("Geolocation data is out of date. Consider updating.")
         end
     end
 
     if !(dataloaded)
-        info("Geolocation data not in memory. Loading...")
+        @info "Geolocation data not in memory. Loading..."
         load()
     end
 
@@ -49,11 +47,12 @@ function geolocate(ip::IPv4; noupdate = true)
         end
     end
 
+    # TODO: sentinel value should be returned
     retdict = Dict{Symbol, Any}()
     if (found > 0) && ip in geodata[found, :v4net]
-        for (k,v) in eachcol(geodata[found, :])
-            retdict[k] = v[1]
-        end
+        # Placeholder, should be removed
+        row = geodata[found, :]
+        return Dict(collect(zip(names(row), row)))
     end
     return retdict
 end

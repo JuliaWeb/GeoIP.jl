@@ -23,7 +23,7 @@ function readmd5()
             strip(readline(f))
         end
     else
-        info("Failed to find checksum file, updating data...")
+        @info "Failed to find checksum file, updating data..."
         update()
         readmd5()
     end
@@ -34,7 +34,7 @@ function getmd5()
         r = HTTP.get(CITYMD5URL)
         return string(r.data)
     catch
-        error("Failed to download checksum file from MaxMind, check network connectivity")
+        @error "Failed to download checksum file from MaxMind, check network connectivity"
     end
 end
 
@@ -44,7 +44,7 @@ function dldata(md5::String)
     r = try
         HTTP.get(CITYDLURL)
     catch
-        error("Failed to download file from MaxMind, check network connectivity")
+        @error "Failed to download file from MaxMind, check network connectivity"
     end
 
     archive = ZipFile.Reader(IOBuffer(r.data))
@@ -68,7 +68,7 @@ function dldata(md5::String)
             write(f, md5)
         end
     else
-        error("Problem with download: only $dlcount of 2 files downloaded")
+        @error "Problem with download: only $dlcount of 2 files downloaded"
     end
 end
 
@@ -93,7 +93,7 @@ function load()
             CSV.File(stream) |> DataFrame
         end
     catch
-        error("Geolocation data cannot be read. Data directory may be corrupt...")
+        @error "Geolocation data cannot be read. Data directory may be corrupt..."
     end
 
     # Clean up unneeded columns and map others to appropriate data structures
