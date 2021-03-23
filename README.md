@@ -25,3 +25,5 @@ geolocate(a)        # returns dictionary with all relevant information
 ## Acknowledgements
 This product uses, but not include, GeoLite2 data created by MaxMind, available from
 [http://www.maxmind.com](http://www.maxmind.com).
+
+Source code of [IPNets.jl](https://github.com/JuliaWeb/IPNets.jl) was integrated as a part of package.
