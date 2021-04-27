@@ -24,28 +24,17 @@ end
 # Geolocation functions
 ########################################
 """
-    geolocate(ip, noupdate = true)
+    geolocate(geodata, ip)
 
 Returns geolocation and other information determined by `ip`. If `noupdate` is `true`, then no updates check is performed and current data is used for the location lookup.
 """
-function geolocate(ip::IPv4; noupdate = true)
-    if !noupdate
-        if updaterequired()
-            update()
-        end
-    end
-
-    if !(dataloaded)
-        @info "Geolocation data not in memory. Loading..."
-        load()
-    end
-
+function geolocate(geodata, ip::IPv4)
     ipnet = IPv4Net(ip, 32)
 
     # only iterate over rows that actually make sense - this filter is
     # less expensive than iteration with in().
     found = 0
-    for i in 1:size(geodata, 1)        # iterate over rows
+    for i in axes(geodata, 1)        # iterate over rows
         if geodata[i, :v4net] > ipnet
             found = i - 1
             break
@@ -62,5 +51,5 @@ function geolocate(ip::IPv4; noupdate = true)
     return retdict
 end
 
-geolocate(ipstr::AbstractString; noupdate = true) = geolocate(IPv4(ipstr); noupdate = noupdate)
-geolocate(ipint::Integer; noupdate = true) = geolocate(IPv4(ipint); noupdate = noupdate)
+geolocate(geodata, ipstr::AbstractString) = geolocate(geodata, IPv4(ipstr))
+geolocate(geodata, ipint::Integer) = geolocate(geodata, IPv4(ipint))
