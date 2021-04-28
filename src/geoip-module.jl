@@ -26,7 +26,7 @@ end
 """
     geolocate(geodata::GeoIP.DB, ip)
 
-Returns geolocation and other information determined by `ip`. If `noupdate` is `true`, then no updates check is performed and current data is used for the location lookup.
+Returns geolocation and other information determined in `geodata` by `ip`.
 """
 function geolocate(geodata::DB, ip::IPv4)
     ipnet = IPv4Net(ip, 32)
