@@ -1,7 +1,7 @@
 name = "GeoIP"
 uuid = "abcde121-99a1-4d4f-92c5-2a3c6888d26a"
 authors = ["Andrey Oskin", "Seth Bromberger", "contributors: https://github.com/JuliaWeb/GeoIP.jl/graphs/contributors"]
-version = "0.4.1"
+version = "0.5.0"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
