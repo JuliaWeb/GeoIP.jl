@@ -1,14 +1,12 @@
 module GeoIP
 
 using DataFrames
-using ZipFile
 using GZip
-using HTTP
+using ZipFile
 using CSV
+using IPNets
 import Sockets: IPv4
-
-include("ipnets.jl")
-using .IPNets
+import Base: getindex
 
 export
     # types

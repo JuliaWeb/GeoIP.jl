@@ -4,33 +4,55 @@ using GeoIP
 using Sockets: IPv4, @ip_str
 using Test
 
-# WARNING!!
-# Currently tests are trying to download data from maxmind, which is impossible due to 
-# the change of maxmind policy
-# Placeholders are left, so they can be used later for actual tests
-# after resolving https://github.com/JuliaWeb/GeoIP.jl/issues/12
-
 TEST_DATADIR = joinpath(dirname(@__FILE__), "data")
-load(TEST_DATADIR)
 
-@testset "Known result" begin
-    ip1 = IPv4("1.0.8.1")
-    geoip1 = geolocate(ip1)
+ENV["GEOIP_DATADIR"] = TEST_DATADIR
+@testset "ZipFile loading" begin
+    ENV["GEOIP_ZIPFILE"] = "GeoLite2-City-CSV.zip"
+
+    geodata = load()
+
+    @testset "Known result" begin
+        ip1 = IPv4("1.0.8.1")
+        geoip1 = geolocate(geodata, ip1)
+        @test geoip1["country_iso_code"] == "CN"
+        @test geoip1["time_zone"] == "Asia/Shanghai"
+        @test ceil(Int, geoip1["location"].x) == 114
+
+        # String indexing
+        geoip1 = geolocate(geodata, "1.0.8.1")
+        @test geoip1["country_iso_code"] == "CN"
+        @test geoip1["time_zone"] == "Asia/Shanghai"
+        @test ceil(Int, geoip1["location"].x) == 114
+    end
+
+    @testset "Null results" begin
+        @test isempty(geolocate(geodata, ip"0.0.0.0"))
+        @test isempty(geolocate(geodata, ip"127.0.0.1"))
+    end
+
+    @testset "Broadcasing" begin
+        result = geolocate.(geodata, [ip"1.0.16.1", ip"1.0.8.1"])
+        @test length(Set(result)) == 2
+        @test !isempty(result[1])
+        @test !isempty(result[2])  
+    end
+
+    @testset "Dict indexing" begin
+        geoip1 = geodata[ip"1.0.8.1"]
+        @test geoip1["country_iso_code"] == "CN"
+        @test geoip1["time_zone"] == "Asia/Shanghai"
+        @test ceil(Int, geoip1["location"].x) == 114
+    end
+end
+
+@testset "Loading from gz files" begin
+    haskey(ENV, "GEOIP_ZIPFILE") && pop!(ENV, "GEOIP_ZIPFILE")
+    geodata = load()
+    geoip1 = geodata[ip"1.0.8.1"]
     @test geoip1["country_iso_code"] == "CN"
     @test geoip1["time_zone"] == "Asia/Shanghai"
     @test ceil(Int, geoip1["location"].x) == 114
-end
-
-@testset "Null results" begin
-    @test isempty(geolocate(ip"0.0.0.0"))
-    @test isempty(geolocate(ip"127.0.0.1"))
-end
-
-@testset "Array of ip's" begin
-    result = geolocate.([ip"1.0.16.1", ip"1.0.8.1"])
-    @test length(Set(result)) == 2
-    @test !isempty(result[1])
-    @test !isempty(result[2])  
 end
 
 end # module
