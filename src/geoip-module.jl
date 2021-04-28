@@ -24,18 +24,19 @@ end
 # Geolocation functions
 ########################################
 """
-    geolocate(geodata, ip)
+    geolocate(geodata::GeoIP.DB, ip)
 
 Returns geolocation and other information determined by `ip`. If `noupdate` is `true`, then no updates check is performed and current data is used for the location lookup.
 """
-function geolocate(geodata, ip::IPv4)
+function geolocate(geodata::DB, ip::IPv4)
     ipnet = IPv4Net(ip, 32)
+    db = geodata.db
 
     # only iterate over rows that actually make sense - this filter is
     # less expensive than iteration with in().
     found = 0
-    for i in axes(geodata, 1)        # iterate over rows
-        if geodata[i, :v4net] > ipnet
+    for i in axes(db, 1)        # iterate over rows
+        if db[i, :v4net] > ipnet
             found = i - 1
             break
         end
@@ -43,13 +44,14 @@ function geolocate(geodata, ip::IPv4)
 
     # TODO: sentinel value should be returned
     retdict = Dict{String, Any}()
-    if (found > 0) && ip in geodata[found, :v4net]
+    if (found > 0) && ip in db[found, :v4net]
         # Placeholder, should be removed
-        row = geodata[found, :]
+        row = db[found, :]
         return Dict(collect(zip(names(row), row)))
     end
     return retdict
 end
 
-geolocate(geodata, ipstr::AbstractString) = geolocate(geodata, IPv4(ipstr))
-geolocate(geodata, ipint::Integer) = geolocate(geodata, IPv4(ipint))
+geolocate(geodata::DB, ipstr::AbstractString) = geolocate(geodata, IPv4(ipstr))
+geolocate(geodata::DB, ipint::Integer) = geolocate(geodata, IPv4(ipint))
+getindex(geodata::DB, ip) = geolocate(geodata, ip)

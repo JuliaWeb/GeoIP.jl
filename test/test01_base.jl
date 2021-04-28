@@ -13,6 +13,12 @@ geodata = load(datadir = TEST_DATADIR)
     @test geoip1["country_iso_code"] == "CN"
     @test geoip1["time_zone"] == "Asia/Shanghai"
     @test ceil(Int, geoip1["location"].x) == 114
+
+    # String indexing
+    geoip1 = geolocate(geodata, "1.0.8.1")
+    @test geoip1["country_iso_code"] == "CN"
+    @test geoip1["time_zone"] == "Asia/Shanghai"
+    @test ceil(Int, geoip1["location"].x) == 114
 end
 
 @testset "Null results" begin
@@ -25,6 +31,13 @@ end
     @test length(Set(result)) == 2
     @test !isempty(result[1])
     @test !isempty(result[2])  
+end
+
+@testset "Dict indexing" begin
+    geoip1 = geodata[ip"1.0.8.1"]
+    @test geoip1["country_iso_code"] == "CN"
+    @test geoip1["time_zone"] == "Asia/Shanghai"
+    @test ceil(Int, geoip1["location"].x) == 114
 end
 
 end # module

@@ -1,3 +1,11 @@
+# Currently it's just a tiny wrapper over DataFrames, but at some point it should 
+# become completely different entity. But user API shouldn't change, that is why we
+# introduce this wrapper
+struct DB
+    db::DataFrame
+end
+
+
 # Path to directory with data, can define GEOIP_DATADIR to override
 # the default (useful for testing with a smaller test set)
 function getdatadir(datadir)
@@ -45,5 +53,5 @@ function load(; datadir = "",
 
     alldata = leftjoin(blocks, locs, on = :geoname_id)
 
-    return sort!(alldata, :v4net)
+    return DB(sort!(alldata, :v4net))
 end

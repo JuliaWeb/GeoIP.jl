@@ -5,6 +5,7 @@ using GZip
 using CSV
 using IPNets
 import Sockets: IPv4
+import Base: getindex
 
 export
     # types
