@@ -2,7 +2,8 @@
 # become completely different entity. But user API shouldn't change, that is why we
 # introduce this wrapper
 struct DB
-    db::DataFrame
+    index::Vector{IPv4Net}
+    db::Vector{Dict{String, Any}}
 end
 
 Base.broadcastable(db::DB) = Ref(db)
@@ -89,6 +90,7 @@ function load(; zipfile = "",
         loadzip(datadir, zipfile)
     end
 
+    # TODO: All of this is slow and should be improved. No DataFrame is needed actually
     # Clean up unneeded columns and map others to appropriate data structures
     select!(blocks, Not([:represented_country_geoname_id, :is_anonymous_proxy, :is_satellite_provider]))
 
@@ -101,5 +103,12 @@ function load(; zipfile = "",
 
     alldata = leftjoin(blocks, locs, on = :geoname_id)
 
-    return DB(sort!(alldata, :v4net))
+    df = sort!(alldata, :v4net)
+    db = Vector{Dict{String, Any}}(undef, size(df, 1))
+    for i in axes(df, 1)
+        row = df[i, :]
+        db[i] = Dict(collect(zip(names(row), row)))
+    end
+
+    return DB(df.v4net, db)
 end

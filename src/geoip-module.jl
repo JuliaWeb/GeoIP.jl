@@ -32,24 +32,16 @@ function geolocate(geodata::DB, ip::IPv4)
     ipnet = IPv4Net(ip, 32)
     db = geodata.db
 
-    # only iterate over rows that actually make sense - this filter is
-    # less expensive than iteration with in().
-    found = 0
-    for i in axes(db, 1)        # iterate over rows
-        if db[i, :v4net] > ipnet
-            found = i - 1
-            break
-        end
-    end
+    idx = searchsortedfirst(geodata.index, ipnet) - 1
 
     # TODO: sentinel value should be returned
-    retdict = Dict{String, Any}()
-    if (found > 0) && ip in db[found, :v4net]
-        # Placeholder, should be removed
-        row = db[found, :]
-        return Dict(collect(zip(names(row), row)))
+    res = if idx > 0 && ip in geodata.index[idx]
+        db[idx]
+    else
+        Dict{String, Any}()
     end
-    return retdict
+
+    return res
 end
 
 geolocate(geodata::DB, ipstr::AbstractString) = geolocate(geodata, IPv4(ipstr))
