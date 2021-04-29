@@ -54,10 +54,10 @@ function loadzip(datadir, zipfile)
     local locs
     try
         for f in r.files
-            if f.name == "GeoLite2-City-Locations-en.csv"
+            if occursin("GeoLite2-City-Locations-en.csv", f.name)
                 v = Vector{UInt8}(undef, f.uncompressedsize)
                 locs = read!(f, v) |> CSV.File |> DataFrame
-            elseif f.name == "GeoLite2-City-Blocks-IPv4.csv"
+            elseif occursin("GeoLite2-City-Blocks-IPv4.csv", f.name)
                 v = Vector{UInt8}(undef, f.uncompressedsize)
                 blocks = read!(f, v) |> CSV.File |> DataFrame
             end
