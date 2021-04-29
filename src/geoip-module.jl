@@ -1,26 +1,4 @@
 ########################################
-# Location structure
-########################################
-# It would be great to replace this with a real GIS package.
-abstract type Point end
-abstract type Point3D <: Point end
-
-struct Location <: Point3D
-    x::Float64
-    y::Float64
-    z::Float64
-    datum::String
-
-    function Location(x, y, z = 0, datum = "WGS84")
-        if x === missing || y === missing
-            return missing
-        else
-            return new(x, y, z, datum)
-        end
-    end
-end
-
-########################################
 # Geolocation functions
 ########################################
 """
@@ -30,15 +8,37 @@ Returns geolocation and other information determined in `geodata` by `ip`.
 """
 function geolocate(geodata::DB, ip::IPv4)
     ipnet = IPv4Net(ip, 32)
-    db = geodata.db
 
+    # TODO: Dict should be changed to a more suitable structure
+    res = Dict{String, Any}()
+    
     idx = searchsortedfirst(geodata.index, ipnet) - 1
+    if idx == 0 || !(ip in geodata.index[idx])
+        return res
+    end
+    row = geodata.blocks[idx]
 
-    # TODO: sentinel value should be returned
-    res = if idx > 0 && ip in geodata.index[idx]
-        db[idx]
-    else
-        Dict{String, Any}()
+    res["net"] = row.net
+    res["geoname_id"] = row.geoname_id
+    res["location"] = row.location
+    res["registered_country_geoname_id"] = row.registered_country_geoname_id
+    res["is_anonymous_proxy"] = row.is_anonymous_proxy
+    res["is_satellite_provider"] = row.is_satellite_provider
+    res["postal_code"] = row.postal_code
+    res["accuracy_radius"] = row.accuracy_radius
+
+    geoname_id = row.geoname_id
+    idx2 = searchsortedfirst(geodata.locindex, geoname_id)
+    if idx2 > length(geodata.locs) || idx2 < 1
+        return res
+    end
+    if geodata.locindex[idx2] != geoname_id
+        return res
+    end
+    
+    row2 = geodata.locs[idx2]
+    for k in keys(row2)
+        res[string(k)] = row2[k]
     end
 
     return res
