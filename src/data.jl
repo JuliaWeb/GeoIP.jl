@@ -1,11 +1,67 @@
+########################################
+# Location structure
+########################################
+# It would be great to replace this with a real GIS package.
+abstract type Point end
+abstract type Point3D <: Point end
+
+struct Location <: Point3D
+    x::Float64
+    y::Float64
+    z::Float64
+    datum::String
+
+    function Location(x, y, z = 0, datum = "WGS84")
+        if x === missing || y === missing
+            return missing
+        else
+            return new(x, y, z, datum)
+        end
+    end
+end
+
 # Currently it's just a tiny wrapper over DataFrames, but at some point it should 
 # become completely different entity. But user API shouldn't change, that is why we
 # introduce this wrapper
-struct DB
-    db::DataFrame
+struct DB{T1, T2}
+    index::Vector{IPv4Net}
+    locindex::Vector{Int}
+    blocks::Vector{T1}
+    locs::Vector{T2}
 end
 
 Base.broadcastable(db::DB) = Ref(db)
+
+struct BlockRow{T}
+    v4net::T
+    geoname_id::Int
+    location::Union{Location, Missing}
+    registered_country_geoname_id::Union{Int, Missing}
+    is_anonymous_proxy::Int
+    is_satellite_provider::Int
+    postal_code::Union{String, Missing}
+    accuracy_radius::Union{Int, Missing}
+end
+
+function BlockRow(csvrow)
+    net = IPNets.IPv4Net(csvrow.network)
+    geoname_id = ismissing(csvrow.geoname_id) ? -1 : csvrow.geoname_id
+    location = Location(csvrow.longitude, csvrow.latitude)
+    registered_country_geoname_id = csvrow.registered_country_geoname_id
+    accuracy_radius = get(csvrow, :accuracy_radius, missing)
+    postal_code = csvrow.postal_code
+
+    BlockRow(
+        net,
+        geoname_id,
+        location,
+        registered_country_geoname_id,
+        csvrow.is_anonymous_proxy,
+        csvrow.is_satellite_provider,
+        postal_code,
+        accuracy_radius
+    )
+end
 
 # Path to directory with data, can define GEOIP_DATADIR to override
 # the default (useful for testing with a smaller test set)
@@ -30,12 +86,10 @@ function loadgz(datadir, blockcsvgz, citycsvgz)
     local locs
     try
         blocks = GZip.open(blockfile, "r") do stream
-            CSV.File(read(stream)) |> DataFrame
-            # CSV.File(stream, types=[String, Int, Int, String, Int, Int, String, Float64, Float64, Int]) |> DataFrame
+            CSV.File(read(stream); types = Dict(:postal_code => String))
         end
         locs = GZip.open(locfile, "r") do stream
-            # CSV.File(stream, types=[Int, String, String, String, String, String, String, String, String, String, String, Int, String, Int]) |> DataFrame
-            CSV.File(read(stream)) |> DataFrame
+            CSV.File(read(stream))
         end
     catch
         @error "Geolocation data cannot be read. Data directory may be corrupt..."
@@ -54,12 +108,12 @@ function loadzip(datadir, zipfile)
     local locs
     try
         for f in r.files
-            if occursin("GeoLite2-City-Locations-en.csv", f.name)
+            if occursin("City-Locations-en.csv", f.name)
                 v = Vector{UInt8}(undef, f.uncompressedsize)
-                locs = read!(f, v) |> CSV.File |> DataFrame
-            elseif occursin("GeoLite2-City-Blocks-IPv4.csv", f.name)
+                locs = read!(f, v) |> CSV.File
+            elseif occursin("City-Blocks-IPv4.csv", f.name)
                 v = Vector{UInt8}(undef, f.uncompressedsize)
-                blocks = read!(f, v) |> CSV.File |> DataFrame
+                blocks = read!(f, v) |> x -> CSV.File(x; types = Dict(:postal_code => String))
             end
         end
     catch
@@ -89,17 +143,12 @@ function load(; zipfile = "",
         loadzip(datadir, zipfile)
     end
 
-    # Clean up unneeded columns and map others to appropriate data structures
-    select!(blocks, Not([:represented_country_geoname_id, :is_anonymous_proxy, :is_satellite_provider]))
+    blockdb = BlockRow.(blocks)
+    sort!(blockdb, by = x -> x.v4net)
+    index = map(x -> x.v4net, blockdb)
+    locsdb = collect(locs)
+    sort!(locsdb, by = x -> x.geoname_id)
+    locindex = map(x -> x.geoname_id, locsdb)
 
-    blocks[!, :v4net] = map(x -> IPNets.IPv4Net(x), blocks[!, :network])
-    select!(blocks, Not(:network))
-
-    blocks[!, :location] = map(Location, blocks[!, :longitude], blocks[!, :latitude])
-    select!(blocks, Not([:longitude, :latitude]))
-    blocks.geoname_id = map(x -> ismissing(x) ? -1 : Int(x), blocks.geoname_id)
-
-    alldata = leftjoin(blocks, locs, on = :geoname_id)
-
-    return DB(sort!(alldata, :v4net))
+    return DB(index, locindex, blockdb, locsdb)
 end

@@ -1,26 +1,4 @@
 ########################################
-# Location structure
-########################################
-# It would be great to replace this with a real GIS package.
-abstract type Point end
-abstract type Point3D <: Point end
-
-struct Location <: Point3D
-    x::Float64
-    y::Float64
-    z::Float64
-    datum::String
-
-    function Location(x, y, z = 0, datum = "WGS84")
-        if x === missing || y === missing
-            return missing
-        else
-            return new(x, y, z, datum)
-        end
-    end
-end
-
-########################################
 # Geolocation functions
 ########################################
 """
@@ -30,26 +8,40 @@ Returns geolocation and other information determined in `geodata` by `ip`.
 """
 function geolocate(geodata::DB, ip::IPv4)
     ipnet = IPv4Net(ip, 32)
-    db = geodata.db
 
-    # only iterate over rows that actually make sense - this filter is
-    # less expensive than iteration with in().
-    found = 0
-    for i in axes(db, 1)        # iterate over rows
-        if db[i, :v4net] > ipnet
-            found = i - 1
-            break
-        end
+    # TODO: Dict should be changed to a more suitable structure
+    res = Dict{String, Any}()
+    
+    idx = searchsortedfirst(geodata.index, ipnet) - 1
+    if idx == 0 || !(ip in geodata.index[idx])
+        return res
+    end
+    row = geodata.blocks[idx]
+
+    res["v4net"] = row.v4net
+    res["geoname_id"] = row.geoname_id
+    res["location"] = row.location
+    res["registered_country_geoname_id"] = row.registered_country_geoname_id
+    res["is_anonymous_proxy"] = row.is_anonymous_proxy
+    res["is_satellite_provider"] = row.is_satellite_provider
+    res["postal_code"] = row.postal_code
+    res["accuracy_radius"] = row.accuracy_radius
+
+    geoname_id = row.geoname_id
+    idx2 = searchsortedfirst(geodata.locindex, geoname_id)
+    if idx2 > length(geodata.locs) || idx2 < 1
+        return res
+    end
+    if geodata.locindex[idx2] != geoname_id
+        return res
+    end
+    
+    row2 = geodata.locs[idx2]
+    for k in keys(row2)
+        res[string(k)] = row2[k]
     end
 
-    # TODO: sentinel value should be returned
-    retdict = Dict{String, Any}()
-    if (found > 0) && ip in db[found, :v4net]
-        # Placeholder, should be removed
-        row = db[found, :]
-        return Dict(collect(zip(names(row), row)))
-    end
-    return retdict
+    return res
 end
 
 geolocate(geodata::DB, ipstr::AbstractString) = geolocate(geodata, IPv4(ipstr))
