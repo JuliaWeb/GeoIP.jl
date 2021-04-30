@@ -86,7 +86,7 @@ function loadgz(datadir, blockcsvgz, citycsvgz)
     local locs
     try
         blocks = GZip.open(blockfile, "r") do stream
-            CSV.File(read(stream))
+            CSV.File(read(stream); types = Dict(:postal_code => String))
         end
         locs = GZip.open(locfile, "r") do stream
             CSV.File(read(stream))
@@ -113,7 +113,7 @@ function loadzip(datadir, zipfile)
                 locs = read!(f, v) |> CSV.File
             elseif occursin("City-Blocks-IPv4.csv", f.name)
                 v = Vector{UInt8}(undef, f.uncompressedsize)
-                blocks = read!(f, v) |> CSV.File
+                blocks = read!(f, v) |> x -> CSV.File(x; types = Dict(:postal_code => String))
             end
         end
     catch
