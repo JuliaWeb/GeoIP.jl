@@ -20,17 +20,13 @@ struct Location <: Point3D
     end
 end
 
-# Currently it's just a tiny wrapper over DataFrames, but at some point it should 
-# become completely different entity. But user API shouldn't change, that is why we
-# introduce this wrapper
-struct DB{T1, T2}
-    index::Vector{IPv4Net}
-    locindex::Vector{Int}
-    blocks::Vector{T1}
-    locs::Vector{T2}
+########################################
+# Main structures
+########################################
+struct Locale{T}
+    index::Vector{Int}
+    locs::T
 end
-
-Base.broadcastable(db::DB) = Ref(db)
 
 struct BlockRow{T}
     v4net::T
@@ -63,6 +59,24 @@ function BlockRow(csvrow)
     )
 end
 
+struct DB{T1, T2 <: Locale}
+    index::Vector{T1}
+    blocks::Vector{BlockRow{T1}}
+    locs::Vector{T2}
+    localeid::Int
+    ldict::Dict{Symbol, Int}
+end
+
+Base.broadcastable(db::DB) = Ref(db)
+function setlocale(db::DB, localename)
+    if localename in keys(db.ldict)
+        return DB(db.index, db.blocks, db.locs, db.ldict[localename], db.ldict)
+    else
+        @warn "Unable to find locale $localename"
+        return db
+    end
+end
+
 # Path to directory with data, can define GEOIP_DATADIR to override
 # the default (useful for testing with a smaller test set)
 function getdatadir(datadir)
@@ -73,6 +87,27 @@ end
 function getzipfile(zipfile)
     isempty(zipfile) || return zipfile
     haskey(ENV, "GEOIP_ZIPFILE") ? ENV["GEOIP_ZIPFILE"] : zipfile
+end
+
+getlocale(x::Pair) = x
+function getlocale(x::Symbol)
+    if x == :en
+        return :en => r"Locations-en.csv$"
+    elseif x == :de
+        return :de => r"Locations-de.csv$"
+    elseif x == :ru
+        return :ru => r"Locations-ru.csv$"
+    elseif x == :ja
+        return :ja => r"Locations-ja.csv$"
+    elseif x == :es
+        return :es => r"Locations-es.csv$"
+    elseif x == :fr
+        return :fr => r"Locations-fr.csv$"
+    elseif x == :pt_br
+        return :pt_br => r"Locations-pt-BR.csv$"
+    elseif x == :zh_cn
+        return :zh_cn => r"Locations-zh_cn.csv$"
+    end
 end
 
 function loadgz(datadir, blockcsvgz, citycsvgz)
@@ -96,22 +131,30 @@ function loadgz(datadir, blockcsvgz, citycsvgz)
         rethrow()
     end
 
-    return blocks, locs
+    return blocks, locs, Dict(:en => 1)
 end
 
-function loadzip(datadir, zipfile)
+function loadzip(datadir, zipfile, locales)
     zipfile = joinpath(datadir, zipfile)
     isfile(zipfile) || throw(ArgumentError("Unable to find data file in $(zipfile)"))
     
     r = ZipFile.Reader(zipfile)
+    ldict = Dict{Symbol, Int}()
+    locid = 1
     local blocks
-    local locs
+    locs = []
     try
         for f in r.files
-            if occursin("City-Locations-en.csv", f.name)
-                v = Vector{UInt8}(undef, f.uncompressedsize)
-                locs = read!(f, v) |> CSV.File
-            elseif occursin("City-Blocks-IPv4.csv", f.name)
+            for (l, s) in locales
+                if occursin(s, f.name)
+                    v = Vector{UInt8}(undef, f.uncompressedsize)
+                    ls = read!(f, v) |> CSV.File
+                    push!(locs, ls)
+                    ldict[l] = locid
+                    locid += 1
+                end
+            end
+            if occursin(r"Blocks-IPv4.csv$", f.name)
                 v = Vector{UInt8}(undef, f.uncompressedsize)
                 blocks = read!(f, v) |> x -> CSV.File(x; types = Dict(:postal_code => String))
             end
@@ -123,7 +166,7 @@ function loadzip(datadir, zipfile)
         close(r)
     end
 
-    return blocks, locs
+    return blocks, locs, ldict
 end
 
 """
@@ -133,22 +176,38 @@ Load GeoIP database from compressed CSV file or files. If `zipfile` argument is 
 """
 function load(; zipfile = "",
                 datadir = "",
+                locales = [:en],
+                deflocale = :en,
                 blockcsvgz = "GeoLite2-City-Blocks-IPv4.csv.gz",
                 citycsvgz  = "GeoLite2-City-Locations-en.csv.gz")
     datadir = getdatadir(datadir)
     zipfile = getzipfile(zipfile)
-    blocks, locs = if isempty(zipfile)
+    blocks, locs, ldict = if isempty(zipfile)
         loadgz(datadir, blockcsvgz, citycsvgz)
     else
-        loadzip(datadir, zipfile)
+        locales = getlocale.(locales)
+        loadzip(datadir, zipfile, locales)
     end
 
     blockdb = BlockRow.(blocks)
     sort!(blockdb, by = x -> x.v4net)
     index = map(x -> x.v4net, blockdb)
-    locsdb = collect(locs)
-    sort!(locsdb, by = x -> x.geoname_id)
-    locindex = map(x -> x.geoname_id, locsdb)
+    locsdb = map(locs) do loc
+        ldb = collect(loc)
+        sort!(ldb, by = x -> x.geoname_id)
+        lindex = map(x -> x.geoname_id, ldb)
+        Locale(lindex, ldb)
+    end
 
-    return DB(index, locindex, blockdb, locsdb)
+    localeid = if deflocale in keys(ldict)
+        ldict[deflocale]
+    else
+        cd = collect(d)
+        idx = findfirst(x -> x[2] == 1, cd)
+        locname = cd[idx][1]
+        @warn "Default locale $deflocale was not found, using locale $locname"
+        1
+    end
+
+    return DB(index, blockdb, locsdb, localeid, ldict)
 end

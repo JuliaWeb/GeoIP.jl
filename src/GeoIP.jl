@@ -13,6 +13,7 @@ export
     Location,
     # methods
     geolocate,
+    setlocale,
     load
 
 include("data.jl")
