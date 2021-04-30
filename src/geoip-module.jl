@@ -18,7 +18,7 @@ function geolocate(geodata::DB, ip::IPv4)
     end
     row = geodata.blocks[idx]
 
-    res["net"] = row.net
+    res["v4net"] = row.v4net
     res["geoname_id"] = row.geoname_id
     res["location"] = row.location
     res["registered_country_geoname_id"] = row.registered_country_geoname_id
