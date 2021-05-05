@@ -1,6 +1,7 @@
 module GeoIP
 
 using ZipFile
+using Geodesy
 using CSV
 using IPNets
 import Sockets: IPv4
