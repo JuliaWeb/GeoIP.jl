@@ -1,26 +1,4 @@
 ########################################
-# Location structure
-########################################
-# It would be great to replace this with a real GIS package.
-abstract type Point end
-abstract type Point3D <: Point end
-
-struct Location <: Point3D
-    x::Float64
-    y::Float64
-    z::Float64
-    datum::String
-
-    function Location(x, y, z = 0, datum = "WGS84")
-        if x === missing || y === missing
-            return missing
-        else
-            return new(x, y, z, datum)
-        end
-    end
-end
-
-########################################
 # Main structures
 ########################################
 struct Locale{T}
@@ -31,7 +9,7 @@ end
 struct BlockRow{T}
     v4net::T
     geoname_id::Int
-    location::Union{Location, Missing}
+    location::Union{LLA{Float64}, Missing}
     registered_country_geoname_id::Union{Int, Missing}
     is_anonymous_proxy::Int
     is_satellite_provider::Int
@@ -42,7 +20,10 @@ end
 function BlockRow(csvrow)
     net = IPNets.IPv4Net(csvrow.network)
     geoname_id = ismissing(csvrow.geoname_id) ? -1 : csvrow.geoname_id
-    location = Location(csvrow.longitude, csvrow.latitude)
+
+    lat = csvrow.latitude
+    lon = csvrow.longitude
+    location = ismissing(lon) || ismissing(lat) ? missing : LLA(lat, lon)
     registered_country_geoname_id = csvrow.registered_country_geoname_id
     accuracy_radius = get(csvrow, :accuracy_radius, missing)
     postal_code = csvrow.postal_code

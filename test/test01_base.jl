@@ -17,13 +17,13 @@ ENV["GEOIP_DATADIR"] = TEST_DATADIR
         geoip1 = geolocate(geodata, ip1)
         @test geoip1["country_iso_code"] == "CN"
         @test geoip1["time_zone"] == "Asia/Shanghai"
-        @test ceil(Int, geoip1["location"].x) == 114
+        @test ceil(Int, geoip1["location"].lat) == 24
 
         # String indexing
         geoip1 = geolocate(geodata, "1.0.8.1")
         @test geoip1["country_iso_code"] == "CN"
         @test geoip1["time_zone"] == "Asia/Shanghai"
-        @test ceil(Int, geoip1["location"].x) == 114
+        @test ceil(Int, geoip1["location"].lat) == 24
     end
 
     @testset "Null results" begin
@@ -42,7 +42,7 @@ ENV["GEOIP_DATADIR"] = TEST_DATADIR
         geoip1 = geodata[ip"1.0.8.1"]
         @test geoip1["country_iso_code"] == "CN"
         @test geoip1["time_zone"] == "Asia/Shanghai"
-        @test ceil(Int, geoip1["location"].x) == 114
+        @test ceil(Int, geoip1["location"].lat) == 24
     end
 end
 
