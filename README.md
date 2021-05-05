@@ -59,6 +59,73 @@ geodata["1.2.3.4"]
 geolocate.(geodata, [ip"1.2.3.4", ip"8.8.8.8"])  # returns vector of geo data.
 ```
 
+## Localization
+
+It is possible to use localized version of geo files. To load localized data, one can use `locales` argument of the `load` function. To switch between different locales is possible with the help of `setlocale` function.
+
+```julia
+using GeoIP
+
+geodata = load(zipfile = "GeoLite2-City-CSV_20191224.zip", locales = [:en, :fr])
+
+geodata[ip"201.186.185.1"]
+# Dict{String, Any} with 21 entries:
+#   "time_zone"                     => "America/Santiago"
+#   "subdivision_2_name"            => missing
+#   "accuracy_radius"               => 100
+#   "geoname_id"                    => 3874960
+#   "continent_code"                => "SA"
+#   "postal_code"                   => missing
+#   "continent_name"                => "South America"
+#   "locale_code"                   => "en"
+#   "subdivision_2_iso_code"        => missing
+#   "location"                      => Location(-72.9436, -41.4709, 0.0, "WGS84")
+#   "v4net"                         => IPv4Net("201.186.185.0/24")
+#   "subdivision_1_name"            => "Los Lagos Region"
+#   "subdivision_1_iso_code"        => "LL"
+#   "city_name"                     => "Port Montt"
+#   "metro_code"                    => missing
+#   "registered_country_geoname_id" => 3895114
+#   "is_in_european_union"          => 0
+#   "is_satellite_provider"         => 0
+#   "is_anonymous_proxy"            => 0
+#   "country_name"                  => "Chile"
+#   "country_iso_code"              => "CL"
+
+geodata_fr = setlocale(geodata, :fr)
+geodata_fr[ip"201.186.185.1"]
+# Dict{String, Any} with 21 entries:
+#   "time_zone"                     => "America/Santiago"
+#   "subdivision_2_name"            => missing
+#   "accuracy_radius"               => 100
+#   "geoname_id"                    => 3874960
+#   "continent_code"                => "SA"
+#   "postal_code"                   => missing
+#   "continent_name"                => "Amérique du Sud"
+#   "locale_code"                   => "fr"
+#   "subdivision_2_iso_code"        => missing
+#   "location"                      => Location(-72.9436, -41.4709, 0.0, "WGS84")
+#   "v4net"                         => IPv4Net("201.186.185.0/24")
+#   "subdivision_1_name"            => missing
+#   "subdivision_1_iso_code"        => "LL"
+#   "city_name"                     => "Puerto Montt"
+#   "metro_code"                    => missing
+#   "registered_country_geoname_id" => 3895114
+#   "is_in_european_union"          => 0
+#   "is_satellite_provider"         => 0
+#   "is_anonymous_proxy"            => 0
+#   "country_name"                  => "Chili"
+#   "country_iso_code"              => "CL"
+```
+
+During `load` procedure, it is possible to use either `Symbol` notation, i.e. `locales = [:en, :fr]` or one can pass `Vector` of `Pair`, where first argument is the locale name and second argument is a regular expression, which defines the name of the CSV file, which contains necessary localization. For example `locales = [:en => r"Locations-en.csv%", :fr => r"Locations-fr.csv"]`. By default, following locales are supported `:en, :de, :ru, :ja, :es, :fr, :pt_br, :zh_cn`.
+
+Default locale, which is used in `getlocale` response can be set with the help of `deflocale` argument of the `load` function. For example, to get `:fr` locale by default
+
+```julia
+geodata = load(zipfile = "GeoLite2-City-CSV_20191224.zip", locales = [:en, :fr], deflocale = :fr)
+```
+
 # Acknowledgements
 This product uses, but not include, GeoLite2 data created by MaxMind, available from
 [http://www.maxmind.com](http://www.maxmind.com).

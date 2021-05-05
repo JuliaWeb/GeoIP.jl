@@ -28,15 +28,16 @@ function geolocate(geodata::DB, ip::IPv4)
     res["accuracy_radius"] = row.accuracy_radius
 
     geoname_id = row.geoname_id
-    idx2 = searchsortedfirst(geodata.locindex, geoname_id)
-    if idx2 > length(geodata.locs) || idx2 < 1
+    locale = geodata.locs[geodata.localeid]
+    idx2 = searchsortedfirst(locale.index, geoname_id)
+    if idx2 > length(locale.locs) || idx2 < 1
         return res
     end
-    if geodata.locindex[idx2] != geoname_id
+    if locale.index[idx2] != geoname_id
         return res
     end
     
-    row2 = geodata.locs[idx2]
+    row2 = locale.locs[idx2]
     for k in keys(row2)
         res[string(k)] = row2[k]
     end
