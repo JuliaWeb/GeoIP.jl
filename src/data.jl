@@ -115,30 +115,6 @@ function getlocale(x::Symbol)
     end
 end
 
-function loadgz(datadir, blockcsvgz, citycsvgz)
-    blockfile = joinpath(datadir, blockcsvgz)
-    locfile = joinpath(datadir, citycsvgz)
-
-    isfile(blockfile) || throw(ArgumentError("Unable to find blocks file in $(blockfile)"))
-    isfile(locfile) || throw(ArgumentError("Unable to find locations file in $(locfile)"))
-    
-    local blocks
-    local locs
-    try
-        blocks = GZip.open(blockfile, "r") do stream
-            CSV.File(read(stream); types = Dict(:postal_code => String))
-        end
-        locs = GZip.open(locfile, "r") do stream
-            CSV.File(read(stream))
-        end
-    catch
-        @error "Geolocation data cannot be read. Data directory may be corrupt..."
-        rethrow()
-    end
-
-    return blocks, [locs], Dict(:en => 1)
-end
-
 function loadzip(datadir, zipfile, locales)
     zipfile = joinpath(datadir, zipfile)
     isfile(zipfile) || throw(ArgumentError("Unable to find data file in $(zipfile)"))
@@ -175,26 +151,20 @@ function loadzip(datadir, zipfile, locales)
 end
 
 """
-    load(; datadir, zipfile, locales, deflocale, blockcsvgz, citycsvgz)
+    load(; datadir, zipfile, locales, deflocale)
 
-Load GeoIP database from compressed CSV file or files. If `zipfile` argument is provided then `load` tries to load data from that file, otherwise it will try to load data from `blockcsvgz` and `citycsvgz`. By default `blockcsvgz` equals to `"GeoLite2-City-Blocks-IPv4.csv.gz"` and `citycsvgz` equals to `"GeoLite2-City-Locations-en.csv.gz"`. `datadir` defines where data files are located and can be either set as an argument or read from the `ENV` variable `GEOIP_DATADIR`. In the same way if `ENV` variable `GEOIP_ZIPFILE` is set, then it is used for determining `zipfile` argument.
+Load GeoIP database from compressed CSV file. The argument `zipfile` should be provided, otherwise `load` function error. `datadir` defines where data files are located and can be either set as an argument or read from the `ENV` variable `GEOIP_DATADIR`. In the same way if `ENV` variable `GEOIP_ZIPFILE` is set, then it is used for determining `zipfile` argument.
 
 Argument `locales` determine locale files which should be loaded. Locales can be given as `Symbol`s or `Pair`s of locale name and filename which contains corresponding locale, e.g. `locales = [:en, :fr]` or `locales = [:en => r"-en.csv"]`. Following locales are supported in `Symbol` version `:en, :de, :ru, :ja, :es, :fr, :pt_br, :zh_cn`. To set default locale use `deflocale` argument, e.g. `deflocale = :en`.
 """
 function load(; zipfile = "",
                 datadir = "",
                 locales = [:en],
-                deflocale = :en,
-                blockcsvgz = "GeoLite2-City-Blocks-IPv4.csv.gz",
-                citycsvgz  = "GeoLite2-City-Locations-en.csv.gz")
+                deflocale = :en)
     datadir = getdatadir(datadir)
     zipfile = getzipfile(zipfile)
-    blocks, locs, ldict = if isempty(zipfile)
-        loadgz(datadir, blockcsvgz, citycsvgz)
-    else
-        locales = getlocale.(locales)
-        loadzip(datadir, zipfile, locales)
-    end
+    locales = getlocale.(locales)
+    blocks, locs, ldict = loadzip(datadir, zipfile, locales)
 
     blockdb = BlockRow.(blocks)
     sort!(blockdb, by = x -> x.v4net)
