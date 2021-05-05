@@ -46,13 +46,4 @@ ENV["GEOIP_DATADIR"] = TEST_DATADIR
     end
 end
 
-@testset "Loading from gz files" begin
-    haskey(ENV, "GEOIP_ZIPFILE") && pop!(ENV, "GEOIP_ZIPFILE")
-    geodata = load()
-    geoip1 = geodata[ip"1.0.8.1"]
-    @test geoip1["country_iso_code"] == "CN"
-    @test geoip1["time_zone"] == "Asia/Shanghai"
-    @test ceil(Int, geoip1["location"].x) == 114
-end
-
 end # module
